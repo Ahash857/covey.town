@@ -127,6 +127,10 @@ export default class TownGameScene extends Phaser.Scene {
       '16_Grocery_store_32x32',
       this._resourcePathPrefix + '/assets/tilesets/16_Grocery_store_32x32.png',
     );
+    this.load.image(
+      'emotePlaceholder',
+      this._resourcePathPrefix + '/assets/emotes/mimimi.png',
+    );
     this.load.tilemapTiledJSON('map', this._resourcePathPrefix + '/assets/tilemaps/indoors.json');
     this.load.atlas(
       'atlas',
@@ -407,6 +411,10 @@ export default class TownGameScene extends Phaser.Scene {
         false,
       ) as Phaser.Types.Input.Keyboard.CursorKeys,
     );
+    const keyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+    keyE.on('down', () => {
+      this.showEmotePlaceholder();
+    });
 
     // Create a sprite with physics enabled via the physics system. The image used for the sprite
     // has a bit of whitespace, so I'm using setSize & setOffset to control the size of the
@@ -513,6 +521,18 @@ export default class TownGameScene extends Phaser.Scene {
     this._onGameReadyListeners.forEach(listener => listener());
     this._onGameReadyListeners = [];
     this.coveyTownController.addListener('playersChanged', players => this.updatePlayers(players));
+  }
+
+  private showEmotePlaceholder() {
+    const gameObjects = this.coveyTownController.ourPlayer.gameObjects;
+    if (!gameObjects) return;
+
+    const sprite = this.add
+      .sprite(gameObjects.sprite.x + 70, gameObjects.sprite.y - 40, 'emotePlaceholder')
+      .setDepth(50)
+      .setScale(0.5);
+
+    this.time.delayedCall(3000, () => sprite.destroy());
   }
 
   createPlayerSprites(player: PlayerController) {
