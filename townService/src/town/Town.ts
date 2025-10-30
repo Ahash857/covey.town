@@ -154,6 +154,14 @@ export default class Town {
       }
     });
 
+    // If player calls emote, emits player ID and emoteID to all clients in the server
+    socket.on('playerEmote', (data: { playerID: string; emoteID: string }) => {
+      this._broadcastEmitter.emit('onEmote', {
+        playerID: data.playerID,
+        emoteID: data.emoteID,
+      });
+    });
+
     // Set up a listener to process updates to interactables.
     // Currently only knows how to process updates for ViewingArea's, and
     // ignores any other updates for any other kind of interactable.
