@@ -415,7 +415,7 @@ export default class TownGameScene extends Phaser.Scene {
     // The server rebroadcasts the event to every client
     const keyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
     keyE.on('down', () => {
-      this.coveyTownController.emitEmote('mimimi');
+      this.coveyTownController.emitEmote('emotePlaceholder');
     });
     // Listen for emote broadcasts from the TownController and display the effect
     // above the correct player's sprite.
@@ -548,16 +548,31 @@ export default class TownGameScene extends Phaser.Scene {
     const player = this.coveyTownController.getPlayer(playerID);
     if (!player.gameObjects) return;
 
-    const sprite = this.add
-      .sprite(
-        player.gameObjects.sprite.x + 65,
-        player.gameObjects.sprite.y - 40,
-        'emotePlaceholder'
-      )
+    const playerSprite = player.gameObjects.sprite;
+    const offsetX = 60;
+    const offsetY = -50;
+
+    const emoteSprite = this.add.sprite(
+      playerSprite.x + offsetX,
+      playerSprite.y + offsetY,
+      emoteID,
+    )
       .setDepth(50)
       .setScale(0.5);
 
-    this.time.delayedCall(3000, () => sprite.destroy());
+    const followInterval = this.time.addEvent({
+      delay: 16,
+      loop: true,
+      callback: () => {
+        if (!emoteSprite.active) return followInterval.remove();
+        emoteSprite.setPosition(playerSprite.x + offsetX, playerSprite.y + offsetY);
+      },
+    });
+
+    this.time.delayedCall(3000, () => {
+      emoteSprite.destroy();
+      followInterval.remove();
+    });
   }
 
   createPlayerSprites(player: PlayerController) {
