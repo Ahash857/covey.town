@@ -535,7 +535,7 @@ export default class TownGameScene extends Phaser.Scene {
     if (!gameObjects) return;
 
     const sprite = this.add
-      .sprite(gameObjects.sprite.x + 70, gameObjects.sprite.y - 40, 'emotePlaceholder')
+      .sprite(gameObjects.sprite.x, gameObjects.sprite.y - 40, 'emotePlaceholder')
       .setDepth(50)
       .setScale(0.5);
 
@@ -550,7 +550,7 @@ export default class TownGameScene extends Phaser.Scene {
 
     const sprite = this.add
       .sprite(
-        player.gameObjects.sprite.x,
+        player.gameObjects.sprite.x + 65,
         player.gameObjects.sprite.y - 40,
         'emotePlaceholder'
       )
