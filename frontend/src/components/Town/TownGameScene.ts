@@ -293,6 +293,18 @@ export default class TownGameScene extends Phaser.Scene {
           player.gameObjects.label.setY(player.gameObjects.sprite.body.y - 20);
         }
       }
+
+      const allPlayers = [...this._players, this.coveyTownController.ourPlayer];
+      allPlayers.forEach(p => {
+        const s = p.gameObjects?.sprite;
+        const l = p.gameObjects?.label;
+        if (s) {
+          s.setDepth(s.y);        // player depth
+          if (l) {
+            l.setDepth(s.y + 1);  // label slightly above the player
+          }
+        }
+      });
     }
   }
 
