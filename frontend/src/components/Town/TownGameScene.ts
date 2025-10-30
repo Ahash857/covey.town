@@ -420,7 +420,7 @@ export default class TownGameScene extends Phaser.Scene {
     // Listen for emote broadcasts from the TownController and display the effect
     // above the correct player's sprite.
     this.coveyTownController.addListener('emote', data => {
-      this.showEmoteForPlayer(data.playerID, data.emoteID);
+      this.showEmote(data.playerID, data.emoteID);
     });
 
     // Create a sprite with physics enabled via the physics system. The image used for the sprite
@@ -530,21 +530,7 @@ export default class TownGameScene extends Phaser.Scene {
     this.coveyTownController.addListener('playersChanged', players => this.updatePlayers(players));
   }
 
-  private showEmotePlaceholder() {
-    const gameObjects = this.coveyTownController.ourPlayer.gameObjects;
-    if (!gameObjects) return;
-
-    const sprite = this.add
-      .sprite(gameObjects.sprite.x, gameObjects.sprite.y - 40, 'emotePlaceholder')
-      .setDepth(50)
-      .setScale(0.5);
-
-    this.time.delayedCall(3000, () => sprite.destroy());
-
-    this.coveyTownController.emitEmote('placeholder');
-  }
-
-  private showEmoteForPlayer(playerID: string, emoteID: string) {
+  private showEmote(playerID: string, emoteID: string) {
     const player = this.coveyTownController.getPlayer(playerID);
     if (!player.gameObjects) return;
 
