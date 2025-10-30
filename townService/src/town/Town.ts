@@ -214,6 +214,13 @@ export default class Town {
         });
       }
     });
+    // When a client triggers an emote, we re-emit it to all other players in the town.
+    socket.on('emote', (data: { playerID: string; emoteID: string }) => {
+      this._broadcastEmitter.emit('emote', {
+        playerID: data.playerID,
+        emoteID: data.emoteID,
+      });
+    });
     return newPlayer;
   }
 

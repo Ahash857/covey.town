@@ -411,9 +411,16 @@ export default class TownGameScene extends Phaser.Scene {
         false,
       ) as Phaser.Types.Input.Keyboard.CursorKeys,
     );
+    // Capture presses of the "E" key to trigger an emote.
+    // The server rebroadcasts the event to every client
     const keyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
     keyE.on('down', () => {
-      this.showEmotePlaceholder();
+      this.coveyTownController.emitEmote('mimimi');
+    });
+    // Listen for emote broadcasts from the TownController and display the effect
+    // above the correct player's sprite.
+    this.coveyTownController.addListener('emote', data => {
+      this.showEmoteForPlayer(data.playerID, data.emoteID);
     });
 
     // Create a sprite with physics enabled via the physics system. The image used for the sprite
@@ -529,6 +536,24 @@ export default class TownGameScene extends Phaser.Scene {
 
     const sprite = this.add
       .sprite(gameObjects.sprite.x + 70, gameObjects.sprite.y - 40, 'emotePlaceholder')
+      .setDepth(50)
+      .setScale(0.5);
+
+    this.time.delayedCall(3000, () => sprite.destroy());
+
+    this.coveyTownController.emitEmote('placeholder');
+  }
+
+  private showEmoteForPlayer(playerID: string, emoteID: string) {
+    const player = this.coveyTownController.getPlayer(playerID);
+    if (!player.gameObjects) return;
+
+    const sprite = this.add
+      .sprite(
+        player.gameObjects.sprite.x,
+        player.gameObjects.sprite.y - 40,
+        'emotePlaceholder'
+      )
       .setDepth(50)
       .setScale(0.5);
 
