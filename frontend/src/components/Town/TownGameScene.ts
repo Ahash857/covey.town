@@ -127,6 +127,10 @@ export default class TownGameScene extends Phaser.Scene {
       '16_Grocery_store_32x32',
       this._resourcePathPrefix + '/assets/tilesets/16_Grocery_store_32x32.png',
     );
+    this.load.image(
+      'emotePlaceholder',
+      this._resourcePathPrefix + '/assets/emotes/mimimi.png',
+    );
     this.load.tilemapTiledJSON('map', this._resourcePathPrefix + '/assets/tilemaps/indoors.json');
     this.load.atlas(
       'atlas',
@@ -289,6 +293,18 @@ export default class TownGameScene extends Phaser.Scene {
           player.gameObjects.label.setY(player.gameObjects.sprite.body.y - 20);
         }
       }
+
+      const allPlayers = [...this._players, this.coveyTownController.ourPlayer];
+      allPlayers.forEach(p => {
+        const s = p.gameObjects?.sprite;
+        const l = p.gameObjects?.label;
+        if (s) {
+          s.setDepth(s.y);        // player depth
+          if (l) {
+            l.setDepth(s.y + 1);  // label slightly above the player
+          }
+        }
+      });
     }
   }
 
@@ -407,6 +423,17 @@ export default class TownGameScene extends Phaser.Scene {
         false,
       ) as Phaser.Types.Input.Keyboard.CursorKeys,
     );
+    // Capture presses of the "E" key to trigger an emote.
+    // The server rebroadcasts the event to every client
+    const keyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+    keyE.on('down', () => {
+      this.coveyTownController.emitEmote('emotePlaceholder');
+    });
+    // Listen for emote broadcasts from the TownController and display the effect
+    // above the correct player's sprite.
+    this.coveyTownController.addListener('emote', data => {
+      this.showEmote(data.playerID, data.emoteID);
+    });
 
     // Create a sprite with physics enabled via the physics system. The image used for the sprite
     // has a bit of whitespace, so I'm using setSize & setOffset to control the size of the
@@ -513,6 +540,37 @@ export default class TownGameScene extends Phaser.Scene {
     this._onGameReadyListeners.forEach(listener => listener());
     this._onGameReadyListeners = [];
     this.coveyTownController.addListener('playersChanged', players => this.updatePlayers(players));
+  }
+
+  private showEmote(playerID: string, emoteID: string) {
+    const player = this.coveyTownController.getPlayer(playerID);
+    if (!player.gameObjects) return;
+
+    const playerSprite = player.gameObjects.sprite;
+    const offsetX = 60;
+    const offsetY = -50;
+
+    const emoteSprite = this.add.sprite(
+      playerSprite.x + offsetX,
+      playerSprite.y + offsetY,
+      emoteID,
+    )
+      .setDepth(50)
+      .setScale(0.5);
+
+    const followInterval = this.time.addEvent({
+      delay: 16,
+      loop: true,
+      callback: () => {
+        if (!emoteSprite.active) return followInterval.remove();
+        emoteSprite.setPosition(playerSprite.x + offsetX, playerSprite.y + offsetY);
+      },
+    });
+
+    this.time.delayedCall(3000, () => {
+      emoteSprite.destroy();
+      followInterval.remove();
+    });
   }
 
   createPlayerSprites(player: PlayerController) {

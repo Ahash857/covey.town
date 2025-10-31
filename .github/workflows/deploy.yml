@@ -1,0 +1,63 @@
+name: Deploy to Lightsail
+
+on:
+  push:
+    branches: [ emotes ]   # ✅ deploy when emotes updates
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy via SSH to Lightsail
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            set -euxo pipefail
+            echo "START $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+      
+            cd ${{ secrets.PROJECT_DIR }}
+      
+            BRANCH="emotes"
+            echo "[GIT] fetch/reset -> $BRANCH @ $(date -u +"%T")"
+            git fetch --all --prune
+            git checkout "$BRANCH" || git checkout -b "$BRANCH"
+            git reset --hard "origin/$BRANCH"
+      
+            # Load nvm in non-interactive shell
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+      
+            # Ensure Node 18 is active
+            nvm install 18 || true
+            nvm use 18 || true
+            node -v
+            npm -v
+            npm config set fund false
+            npm config set audit false
+      
+            echo "[BACKEND] deps @ $(date -u +"%T")"
+            cd townService
+            time npm ci --no-audit --no-fund
+            echo "[BACKEND] build @ $(date -u +"%T")"
+            time npm run build
+      
+            echo "[FRONTEND] deps @ $(date -u +"%T")"
+            cd ../frontend
+            export NEXT_PUBLIC_TOWNS_SERVICE_URL='${{ secrets.NEXT_PUBLIC_TOWNS_SERVICE_URL }}'
+            export NEXT_TELEMETRY_DISABLED=1
+            time npm ci --no-audit --no-fund
+            echo "[FRONTEND] build @ $(date -u +"%T")"
+            time npm run build
+      
+            echo "[PM2] restart @ $(date -u +"%T")"
+            pm2 restart covey-backend
+            pm2 restart covey-frontend
+            pm2 save
+      
+            echo "DONE $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+      

@@ -261,6 +261,7 @@ export interface ServerToClientEvents {
   chatMessage: (message: ChatMessage) => void;
   interactableUpdate: (interactable: Interactable) => void;
   commandResponse: (response: InteractableCommandResponse) => void;
+  emote: (data: { playerID: PlayerID; emoteID: string }) => void;
 }
 
 export interface ClientToServerEvents {
@@ -268,4 +269,5 @@ export interface ClientToServerEvents {
   playerMovement: (movementData: PlayerLocation) => void;
   interactableUpdate: (update: Interactable) => void;
   interactableCommand: (command: InteractableCommand & InteractableCommandBase) => void;
+  emote: (data: { playerID: PlayerID; emoteID: string }) => void;
 }
