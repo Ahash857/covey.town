@@ -1,0 +1,45 @@
+name: Deploy to Lightsail
+
+on:
+  push:
+    branches: [ emotes ]   # ✅ deploy when emotes updates
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy via SSH to Lightsail
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            set -e
+            cd ${{ secrets.PROJECT_DIR }}
+
+            # Pull latest emotes branch
+            BRANCH="emotes"
+            git fetch --all --prune
+            git checkout "$BRANCH" || git checkout -b "$BRANCH"
+            git reset --hard "origin/$BRANCH"
+
+            # Backend
+            cd townService
+            nvm use 18.0.0 || true
+            npm ci
+            npm run build
+
+            # Frontend
+            cd ../frontend
+            export NEXT_PUBLIC_TOWNS_SERVICE_URL='${{ secrets.NEXT_PUBLIC_TOWNS_SERVICE_URL }}'
+            npm ci
+            npm run build
+
+            # Restart PM2 services by name
+            pm2 restart covey-backend
+            pm2 restart covey-frontend
+            pm2 save
