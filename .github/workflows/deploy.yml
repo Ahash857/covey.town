@@ -10,13 +10,18 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
+      - name: Write SSH key to file
+        run: |
+          mkdir -p ~/.ssh
+          # write the secret exactly as-is; keep permissions strict
+          printf '%s' "${{ secrets.SSH_KEY }}" > ~/.ssh/gha_deploy
+          chmod 600 ~/.ssh/gha_deploy
       - name: Deploy via SSH to Lightsail
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
+          key_path: ~/.ssh/gha_deploy
           script: |
             set -e
             cd ${{ secrets.PROJECT_DIR }}
