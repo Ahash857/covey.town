@@ -18,10 +18,10 @@ export default function FindOverlayButton() {
       onClick={handleClick}
       style={{
         position: 'fixed',
-        right: 16,
-        bottom: 16,
-        width: 56,
-        height: 56,
+        right: 250,
+        top: 16,
+        width: 100,
+        height: 40,
         zIndex: 2147483647,
         padding: 0,
         borderRadius: 12,
@@ -32,8 +32,8 @@ export default function FindOverlayButton() {
       <Image
         src={findPng}
         alt=''
-        width={56}
-        height={56}
+        width={100}
+        height={40}
         priority
         sizes='56px'
         style={{ imageRendering: 'pixelated', display: 'block' }}
