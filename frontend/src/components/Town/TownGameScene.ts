@@ -9,6 +9,7 @@ import ConversationArea from './interactables/ConversationArea';
 import GameArea from './interactables/GameArea';
 import Transporter from './interactables/Transporter';
 import ViewingArea from './interactables/ViewingArea';
+import findOverlayButton from './interactables/findOverlayButton';
 
 // Still not sure what the right type is here... "Interactable" doesn't do it
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -133,12 +134,12 @@ export default class TownGameScene extends Phaser.Scene {
       this._resourcePathPrefix + '/assets/atlas/atlas.png',
       this._resourcePathPrefix + '/assets/atlas/atlas.json',
     );
-    
+
     // load the pet atlas
     this.load.atlas(
-      'cat_atlas_key', 
-      this._resourcePathPrefix + '/assets/sprites/cat_atlas.png', 
-      this._resourcePathPrefix + '/assets/sprites/cat_atlas.json', 
+      'cat_atlas_key',
+      this._resourcePathPrefix + '/assets/sprites/cat_atlas.png',
+      this._resourcePathPrefix + '/assets/sprites/cat_atlas.json',
     );
   }
 
@@ -154,7 +155,7 @@ export default class TownGameScene extends Phaser.Scene {
     disconnectedPlayers.forEach(disconnectedPlayer => {
       if (disconnectedPlayer.gameObjects) {
         // FIX: Include petSprite in destructuring so it's defined
-        const { sprite, label, petSprite } = disconnectedPlayer.gameObjects; 
+        const { sprite, label, petSprite } = disconnectedPlayer.gameObjects;
         if (sprite && label) {
           sprite.destroy();
           label.destroy();
@@ -222,7 +223,7 @@ export default class TownGameScene extends Phaser.Scene {
       body.setVelocity(0);
 
       const primaryDirection = this.getNewMovementDirection();
-      const isMoving = primaryDirection !== undefined; 
+      const isMoving = primaryDirection !== undefined;
 
       switch (primaryDirection) {
         case 'left':
@@ -231,7 +232,7 @@ export default class TownGameScene extends Phaser.Scene {
 
           // Play the left walking animation
           if (gameObjects.petSprite) {
-            gameObjects.petSprite.anims.play('cat-walk-left', true); 
+            gameObjects.petSprite.anims.play('cat-walk-left', true);
           }
           break;
         case 'right':
@@ -240,7 +241,7 @@ export default class TownGameScene extends Phaser.Scene {
 
           // Play the right walking animation
           if (gameObjects.petSprite) {
-            gameObjects.petSprite.anims.play('cat-walk-right', true); 
+            gameObjects.petSprite.anims.play('cat-walk-right', true);
           }
           break;
         case 'front':
@@ -286,10 +287,10 @@ export default class TownGameScene extends Phaser.Scene {
 
       if (gameObjects.petSprite) {
         // Pet Position: Offset set to place the sprite lower-left of player
-        gameObjects.petSprite.setX(gameObjects.sprite.getBounds().centerX - 25); 
+        gameObjects.petSprite.setX(gameObjects.sprite.getBounds().centerX - 25);
         gameObjects.petSprite.setY(gameObjects.sprite.getBounds().centerY + 15);
         gameObjects.petSprite.setVisible(gameObjects.sprite.visible);
-        
+
       }
 
       // const isMoving = primaryDirection !== undefined; // Re-use the existing `isMoving` variable
@@ -339,13 +340,13 @@ export default class TownGameScene extends Phaser.Scene {
             // Other Player Pet Position Update
             player.gameObjects.petSprite.setX(player.gameObjects.sprite.getBounds().centerX - 25);
             player.gameObjects.petSprite.setY(player.gameObjects.sprite.getBounds().centerY + 15);
-            
+
             // Control animation based on player movement state
             if (!player.location.moving) {
-               player.gameObjects.petSprite.anims.play('cat-idle', true); 
+               player.gameObjects.petSprite.anims.play('cat-idle', true);
             } else {
                // Player is moving: Play the corresponding directional walk animation.
-               const petAnimKey = `cat-walk-${player.location.rotation}`; 
+               const petAnimKey = `cat-walk-${player.location.rotation}`;
                player.gameObjects.petSprite.anims.play(petAnimKey, true);
             }
           }
@@ -478,13 +479,13 @@ export default class TownGameScene extends Phaser.Scene {
       .setSize(30, 40)
       .setOffset(0, 24)
       .setDepth(6);
-      
+
     // Local player pet creation
     const petSprite = this.add
-      .sprite(spawnPoint.x - 25, spawnPoint.y + 15, 'cat_atlas_key') 
-      .setScale(1.0) 
+      .sprite(spawnPoint.x - 25, spawnPoint.y + 15, 'cat_atlas_key')
+      .setScale(1.0)
       .setDepth(6)
-      .play('cat-idle'); 
+      .play('cat-idle');
 
 
     const label = this.add
@@ -522,9 +523,9 @@ export default class TownGameScene extends Phaser.Scene {
     anims.create({
       key: 'cat-idle',
       // Subtle front pose for standing (Frames 0-1)
-      frames: anims.generateFrameNames('cat_atlas_key', { prefix: 'cat-front-', start: 0, end: 1 }), 
-      frameRate: 3, 
-      repeat: -1, 
+      frames: anims.generateFrameNames('cat_atlas_key', { prefix: 'cat-front-', start: 0, end: 1 }),
+      frameRate: 3,
+      repeat: -1,
     });
 
     // Pet walking animations
@@ -634,10 +635,10 @@ export default class TownGameScene extends Phaser.Scene {
 
       // Other player pet creation
       const petSprite = this.add
-        .sprite(player.location.x - 25, player.location.y + 15, 'cat_atlas_key') 
-        .setScale(1.0) 
+        .sprite(player.location.x - 25, player.location.y + 15, 'cat_atlas_key')
+        .setScale(1.0)
         .setDepth(6)
-        .play('cat-idle'); 
+        .play('cat-idle');
 
       const label = this.add.text(
         player.location.x,
