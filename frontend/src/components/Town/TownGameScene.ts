@@ -63,8 +63,15 @@ export default class TownGameScene extends Phaser.Scene {
   private _isEmoteMenuOpen = false;
   private _emoteMenuCooldownMs = 5000; // 1 second between opens
   private _lastEmoteMenuOpenTime = 0;
-  private _emoteMenuOffsetX = 180;
+  private _emoteMenuOffsetX = 190;
   private _emoteMenuOffsetY = 120;
+  private _activeEmotes: {
+    sprite: Phaser.GameObjects.Sprite;
+    player: PlayerController;
+    offsetX: number;
+    offsetY: number;
+  }[] = [];
+
 
   private _emoteAnimations: Record<string, string> = {
     //TODO: add other emotes here
@@ -331,13 +338,29 @@ export default class TownGameScene extends Phaser.Scene {
 
       if (this._isEmoteMenuOpen && this._emoteMenuContainer) {
         const ourPlayer = this.coveyTownController.ourPlayer;
-        const playerSpriteFollow = ourPlayer.gameObjects?.sprite;
-        if (playerSpriteFollow) {
-          this._emoteMenuContainer.x =
-            playerSpriteFollow.x + this._emoteMenuOffsetX;
-          this._emoteMenuContainer.y =
-            playerSpriteFollow.y + this._emoteMenuOffsetY;
+        const sprite = ourPlayer.gameObjects?.sprite;
+        const body = sprite?.body as Phaser.Physics.Arcade.Body | undefined;
+
+        if (body) {
+          this._emoteMenuContainer.x = body.x + this._emoteMenuOffsetX;
+          this._emoteMenuContainer.y = body.y + this._emoteMenuOffsetY;
         }
+      }
+
+      for (const emote of this._activeEmotes) {
+        const playerSprite = emote.player.gameObjects?.sprite;
+        const body = playerSprite?.body as Phaser.Physics.Arcade.Body | undefined;
+        if (!playerSprite || !body || !emote.sprite.active) {
+          continue;
+        }
+
+        const centerX = body.x + body.width / 2;
+        const centerY = body.y + body.height / 2;
+
+        emote.sprite.setPosition(
+          centerX + emote.offsetX,
+          centerY + emote.offsetY,
+        );
       }
     }
   }
@@ -723,38 +746,33 @@ export default class TownGameScene extends Phaser.Scene {
     if (!player.gameObjects) return;
 
     const playerSprite = player.gameObjects.sprite;
-    const offsetX = 60;
+    const body = playerSprite.body as Phaser.Physics.Arcade.Body | undefined;
+    if (!body) return;
+
+    const offsetX = 70;
     const offsetY = -50;
 
-    // create a separate sprite for the emote to keep visuals independent from the
-    // player's animation state and makes it trivial to add or remove without
-    // touching movement / collision logic.
+    const centerX = body.x + body.width / 2;
+    const centerY = body.y + body.height / 2;
+
     const emoteSprite = this.add
-      .sprite(playerSprite.x + offsetX, playerSprite.y + offsetY, emoteID, 0)
+      .sprite(centerX + offsetX, centerY + offsetY, emoteID, 0)
       .setDepth(50)
       .setScale(0.35);
 
-    const followInterval = this.time.addEvent({
-      delay: 16,
-      loop: true,
-      callback: () => {
-        if (!emoteSprite.active) {
-          followInterval.remove();
-          return;
-        }
-        emoteSprite.setPosition(playerSprite.x + offsetX, playerSprite.y + offsetY);
-      },
-    });
-
     const animKey = this._emoteAnimations[emoteID] ?? 'mimimiAnim';
-
     emoteSprite.play(animKey);
+
+    this._activeEmotes.push({ sprite: emoteSprite, player, offsetX, offsetY });
 
     emoteSprite.on('animationcomplete', () => {
       emoteSprite.destroy();
-      followInterval.remove();
+      
+      this._activeEmotes = this._activeEmotes.filter(e => e.sprite !== emoteSprite);
     });
   }
+
+
 
   createPlayerSprites(player: PlayerController) {
     if (!player.gameObjects) {
