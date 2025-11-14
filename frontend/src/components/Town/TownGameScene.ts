@@ -129,7 +129,7 @@ export default class TownGameScene extends Phaser.Scene {
     );
     this.load.spritesheet(
       'emotePlaceholder',
-      this._resourcePathPrefix + '/assets/emotes/mimimi-spritesheet.png',
+      this._resourcePathPrefix + '/assets/emotes/spritesheets/mimimi.png',
       {
         frameWidth: 354,
         frameHeight: 266,
@@ -328,8 +328,8 @@ export default class TownGameScene extends Phaser.Scene {
     this._map = this.make.tilemap({ key: 'map' });
 
     /* Parameters are the name you gave the tileset in Tiled and then the key of the
-         tileset image in Phaser's cache (i.e. the name you used in preload)
-         */
+      tileset image in Phaser's cache (i.e. the name you used in preload)
+    */
     const tileset = [
       'Room_Builder_32x32',
       '22_Museum_32x32',
