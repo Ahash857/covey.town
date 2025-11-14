@@ -10,6 +10,7 @@ import useChatContext from '../VideoCall/VideoFrontend/hooks/useChatContext/useC
 import ChatWindow from '../VideoCall/VideoFrontend/components/ChatWindow/ChatWindow';
 import clsx from 'clsx';
 import { createStyles, makeStyles, Theme } from '@material-ui/core';
+import FindOverlayButton from './interactables/FindOverlayButton';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -92,6 +93,9 @@ export default function TownMap(): JSX.Element {
       <div id='map-container' />
       <div id='social-container'>
         <SocialSidebar />
+      </div>
+      <div id='petFindButton'>
+        <FindOverlayButton />
       </div>
     </div>
   );
