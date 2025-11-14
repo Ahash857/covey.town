@@ -1,0 +1,241 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const jest_mock_extended_1 = require("jest-mock-extended");
+const nanoid_1 = require("nanoid");
+const Player_1 = __importDefault(require("../lib/Player"));
+const TestUtils_1 = require("../TestUtils");
+const ConversationArea_1 = __importDefault(require("./ConversationArea"));
+const InteractableArea_1 = __importStar(require("./InteractableArea"));
+class TestInteractableArea extends InteractableArea_1.default {
+    handleCommand() {
+        throw new Error('Method not implemented.');
+    }
+    toModel() {
+        return { id: this.id, occupants: [], type: 'ConversationArea' };
+    }
+}
+const HALF_W = InteractableArea_1.PLAYER_SPRITE_WIDTH / 2;
+const HALF_H = InteractableArea_1.PLAYER_SPRITE_HEIGHT / 2;
+describe('InteractableArea', () => {
+    const testAreaBox = { x: 100, y: 100, width: 100, height: 100 };
+    let testArea;
+    const id = (0, nanoid_1.nanoid)();
+    let newPlayer;
+    const townEmitter = (0, jest_mock_extended_1.mock)();
+    beforeEach(() => {
+        (0, jest_mock_extended_1.mockClear)(townEmitter);
+        testArea = new TestInteractableArea(id, testAreaBox, townEmitter);
+        newPlayer = new Player_1.default((0, nanoid_1.nanoid)(), (0, jest_mock_extended_1.mock)());
+        testArea.add(newPlayer);
+    });
+    describe('add', () => {
+        it('Adds the player to the occupants list', () => {
+            expect(testArea.occupantsByID).toEqual([newPlayer.id]);
+        });
+        it("Sets the player's conversationLabel and emits an update for their location", () => {
+            expect(newPlayer.location.interactableID).toEqual(id);
+            const lastEmittedMovement = (0, TestUtils_1.getLastEmittedEvent)(townEmitter, 'playerMoved');
+            expect(lastEmittedMovement.location.interactableID).toEqual(id);
+        });
+    });
+    describe('remove', () => {
+        it('Removes the player from the list of occupants', () => {
+            testArea.remove(newPlayer);
+            expect(testArea.occupantsByID).toEqual([]);
+        });
+        it("Clears the player's conversationLabel and emits an update for their location", () => {
+            (0, jest_mock_extended_1.mockClear)(townEmitter);
+            testArea.remove(newPlayer);
+            expect(newPlayer.location.interactableID).toBeUndefined();
+            const lastEmittedMovement = (0, TestUtils_1.getLastEmittedEvent)(townEmitter, 'playerMoved');
+            expect(lastEmittedMovement.location.interactableID).toBeUndefined();
+        });
+    });
+    describe('isActive', () => {
+        it('Returns true when there are players in the area', () => {
+            expect(testArea.isActive).toBe(true);
+        });
+        it('Returns false when there are no players in the area', () => {
+            testArea.remove(newPlayer);
+            expect(testArea.isActive).toBe(false);
+        });
+    });
+    describe('addPlayersWithinBounds', () => {
+        let playersInArea;
+        let playersNotInArea;
+        beforeEach(() => {
+            playersInArea = [];
+            playersNotInArea = [];
+            const box = testArea.boundingBox;
+            for (let i = 0; i < 10; i++) {
+                const player = new Player_1.default((0, nanoid_1.nanoid)(), (0, jest_mock_extended_1.mock)());
+                player.location.x = box.x + box.width / 2;
+                player.location.y = box.y + box.height / 2;
+                playersInArea.push(player);
+            }
+            for (let i = 0; i < 10; i++) {
+                const player = new Player_1.default((0, nanoid_1.nanoid)(), (0, jest_mock_extended_1.mock)());
+                player.location.x = -100;
+                player.location.y = -100;
+                playersNotInArea.push(player);
+            }
+            const mixedPlayers = playersInArea
+                .concat(playersNotInArea)
+                .sort((a, b) => a.id.localeCompare(b.id));
+            testArea.addPlayersWithinBounds(mixedPlayers);
+        });
+        it('Does not include players not within the area', () => {
+            playersNotInArea.forEach(player => expect(testArea.occupantsByID.includes(player.id)).toBe(false));
+        });
+        it('Includes all players that are within the area', () => {
+            playersInArea.forEach(player => expect(testArea.occupantsByID.includes(player.id)).toBe(true));
+            expect(playersInArea.length).toEqual(playersInArea.length);
+        });
+    });
+    describe('contains', () => {
+        const { x, y, width, height } = testAreaBox;
+        it.each([
+            { x: x + width / 2, y: y + width / 2 },
+            { x: x + 10 + width / 2, y: y + 10 + width / 2 },
+            { x: x - 1 + width, y: y + 1 },
+            { x: x + 1, y: y + 1 },
+            { x: x - 1 + width, y: y - 1 + height },
+            { x: x + 1, y: y - 1 + height },
+        ])('Returns true for locations that are inside of the area %p', (location) => {
+            expect(testArea.contains({ ...(0, TestUtils_1.defaultLocation)(), x: location.x, y: location.y })).toBe(true);
+        });
+        it.each([
+            { x: x - 1 + HALF_W + width, y: y + 1 - HALF_H },
+            { x: x + 1 - HALF_W, y: y + 1 - HALF_H },
+            { x: x - 1 + HALF_W + width, y: y - 1 + HALF_H + height },
+            { x: x + 1 - HALF_W, y: y - 1 + HALF_H + height },
+        ])('Returns true for locations that are outside of the area, but are included due to the player sprite size overlapping with the target area', (location) => {
+            expect(testArea.contains({ ...(0, TestUtils_1.defaultLocation)(), x: location.x, y: location.y })).toBe(true);
+        });
+        it.each([
+            { x: x + HALF_W + width, y: y - HALF_H },
+            { x: x - HALF_W, y: y - HALF_H },
+            { x: x + HALF_W + width, y: y + HALF_H + height },
+            { x: x - HALF_W, y: y + HALF_H + height },
+        ])('Returns false for locations that exactly hit the edge of the area', (location) => {
+            expect(testArea.contains({ ...(0, TestUtils_1.defaultLocation)(), x: location.x, y: location.y })).toBe(false);
+        });
+        it.each([
+            { x: x + width * 2, y: y - height },
+            { x: x - width, y: y - width },
+            { x: x + width * 2, y: y + height * 2 },
+            { x: x - width, y: y + height * 2 },
+            { x: x + 1, y: y - height },
+            { x: x - width, y: y + 1 },
+            { x: x + width * 2, y: y + 1 },
+            { x: x + 1, y: y + height * 2 },
+        ])('Returns false for locations that are outside of the area', (location) => {
+            expect(testArea.contains({ ...(0, TestUtils_1.defaultLocation)(), x: location.x, y: location.y })).toBe(false);
+        });
+    });
+    describe('overlaps', () => {
+        const cheight = testAreaBox.height / 2;
+        const cwidth = testAreaBox.width / 2;
+        const cx = testAreaBox.x + cwidth;
+        const cy = testAreaBox.y + cheight;
+        const { x, y, height, width } = testAreaBox;
+        it.each([
+            { x: cx, y: cy, width: 2, height: 2 },
+            { x: cx + 4, y: cy + 4, width: 2, height: 2 },
+            { x: cx + 4, y: cy + 4, width: 2, height: 2 },
+        ])('Returns true for locations that are contained entirely %p', (intersectBox) => {
+            expect(testArea.overlaps(new ConversationArea_1.default({ id: 'testArea', occupants: [] }, intersectBox, (0, jest_mock_extended_1.mock)()))).toBe(true);
+        });
+        it.each([
+            { x: x - 50, y: y - 50, width: 100, height: 100 },
+            { x: x - 50, y: y + height - 50, width: 100, height: 100 },
+            { x: x + width - 50, y: y - 50, width: 100, height: 100 },
+            { x: x + width - 50, y: y + height - 50, width: 100, height: 100 },
+            {
+                x: x - InteractableArea_1.PLAYER_SPRITE_WIDTH / 2,
+                y: y - InteractableArea_1.PLAYER_SPRITE_HEIGHT / 2,
+                width: InteractableArea_1.PLAYER_SPRITE_WIDTH + 1,
+                height: InteractableArea_1.PLAYER_SPRITE_HEIGHT + 1,
+            },
+            {
+                x: x - InteractableArea_1.PLAYER_SPRITE_WIDTH / 2,
+                y: y + height + InteractableArea_1.PLAYER_SPRITE_HEIGHT / 2,
+                width: InteractableArea_1.PLAYER_SPRITE_WIDTH + 1,
+                height: InteractableArea_1.PLAYER_SPRITE_HEIGHT + 1,
+            },
+            {
+                x: x + width + InteractableArea_1.PLAYER_SPRITE_WIDTH / 2,
+                y: y - InteractableArea_1.PLAYER_SPRITE_HEIGHT / 2,
+                width: InteractableArea_1.PLAYER_SPRITE_WIDTH + 1,
+                height: InteractableArea_1.PLAYER_SPRITE_HEIGHT + 1,
+            },
+            {
+                x: x + width + InteractableArea_1.PLAYER_SPRITE_WIDTH / 2,
+                y: y + height + InteractableArea_1.PLAYER_SPRITE_HEIGHT / 2,
+                width: InteractableArea_1.PLAYER_SPRITE_WIDTH + 1,
+                height: InteractableArea_1.PLAYER_SPRITE_HEIGHT + 1,
+            },
+        ])('Returns true for locations that are overlapping with edges %p', (intersectBox) => {
+            expect(testArea.overlaps(new ConversationArea_1.default({ id: 'testArea', occupants: [] }, intersectBox, (0, jest_mock_extended_1.mock)()))).toBe(true);
+        });
+        it.each([
+            { x: x - 50, y: y - 50, width: 10, height: 10 },
+            { x: x - 50, y: y + height + 50, width: 10, height: 10 },
+            { x: x + width + 50, y: y - 50, width: 100, height: 100 },
+            { x: x + width + 50, y: y + height + 50, width: 100, height: 100 },
+            {
+                x: x - InteractableArea_1.PLAYER_SPRITE_WIDTH * 1.5,
+                y: y - InteractableArea_1.PLAYER_SPRITE_HEIGHT * 1.5,
+                width: InteractableArea_1.PLAYER_SPRITE_WIDTH / 2,
+                height: InteractableArea_1.PLAYER_SPRITE_HEIGHT / 2,
+            },
+            {
+                x: x - InteractableArea_1.PLAYER_SPRITE_WIDTH,
+                y: y + height + InteractableArea_1.PLAYER_SPRITE_HEIGHT,
+                width: InteractableArea_1.PLAYER_SPRITE_WIDTH,
+                height: InteractableArea_1.PLAYER_SPRITE_HEIGHT,
+            },
+            {
+                x: x + width + InteractableArea_1.PLAYER_SPRITE_WIDTH,
+                y: y - InteractableArea_1.PLAYER_SPRITE_HEIGHT,
+                width: InteractableArea_1.PLAYER_SPRITE_WIDTH,
+                height: InteractableArea_1.PLAYER_SPRITE_HEIGHT,
+            },
+            {
+                x: x + width + InteractableArea_1.PLAYER_SPRITE_WIDTH,
+                y: y + height + InteractableArea_1.PLAYER_SPRITE_HEIGHT,
+                width: InteractableArea_1.PLAYER_SPRITE_WIDTH,
+                height: InteractableArea_1.PLAYER_SPRITE_HEIGHT,
+            },
+        ])('Returns false for locations that have no overlap %p', (intersectBox) => {
+            expect(testArea.overlaps(new ConversationArea_1.default({ id: 'testArea', occupants: [] }, intersectBox, (0, jest_mock_extended_1.mock)()))).toBe(false);
+        });
+    });
+});
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiSW50ZXJhY3RhYmxlQXJlYS50ZXN0LmpzIiwic291cmNlUm9vdCI6IiIsInNvdXJjZXMiOlsiLi4vLi4vLi4vc3JjL3Rvd24vSW50ZXJhY3RhYmxlQXJlYS50ZXN0LnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7QUFBQSwyREFBcUQ7QUFDckQsbUNBQWdDO0FBQ2hDLDJEQUFtQztBQUNuQyw0Q0FBb0U7QUFTcEUsMEVBQWtEO0FBQ2xELHVFQUFpRztBQUVqRyxNQUFNLG9CQUFxQixTQUFRLDBCQUFnQjtJQUMxQyxhQUFhO1FBR2xCLE1BQU0sSUFBSSxLQUFLLENBQUMseUJBQXlCLENBQUMsQ0FBQztJQUM3QyxDQUFDO0lBRU0sT0FBTztRQUNaLE9BQU8sRUFBRSxFQUFFLEVBQUUsSUFBSSxDQUFDLEVBQUUsRUFBRSxTQUFTLEVBQUUsRUFBRSxFQUFFLElBQUksRUFBRSxrQkFBa0IsRUFBRSxDQUFDO0lBQ2xFLENBQUM7Q0FDRjtBQUNELE1BQU0sTUFBTSxHQUFHLHNDQUFtQixHQUFHLENBQUMsQ0FBQztBQUN2QyxNQUFNLE1BQU0sR0FBRyx1Q0FBb0IsR0FBRyxDQUFDLENBQUM7QUFFeEMsUUFBUSxDQUFDLGtCQUFrQixFQUFFLEdBQUcsRUFBRTtJQUNoQyxNQUFNLFdBQVcsR0FBRyxFQUFFLENBQUMsRUFBRSxHQUFHLEVBQUUsQ0FBQyxFQUFFLEdBQUcsRUFBRSxLQUFLLEVBQUUsR0FBRyxFQUFFLE1BQU0sRUFBRSxHQUFHLEVBQUUsQ0FBQztJQUNoRSxJQUFJLFFBQTBCLENBQUM7SUFDL0IsTUFBTSxFQUFFLEdBQUcsSUFBQSxlQUFNLEdBQUUsQ0FBQztJQUNwQixJQUFJLFNBQWlCLENBQUM7SUFDdEIsTUFBTSxXQUFXLEdBQUcsSUFBQSx5QkFBSSxHQUFlLENBQUM7SUFFeEMsVUFBVSxDQUFDLEdBQUcsRUFBRTtRQUNkLElBQUEsOEJBQVMsRUFBQyxXQUFXLENBQUMsQ0FBQztRQUN2QixRQUFRLEdBQUcs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QUFDLEVBQUU7WUFDOUIsRUFBRSxDQUFDLEVBQUUsQ0FBQyxHQUFHLENBQUMsRUFBRSxDQUFDLEVBQUUsQ0FBQyxHQUFHLENBQUMsRUFBRTtZQUN0QixFQUFFLENBQUMsRUFBRSxDQUFDLEdBQUcsQ0FBQyxHQUFHLEtBQUssRUFBRSxDQUFDLEVBQUUsQ0FBQyxHQUFHLENBQUMsR0FBRyxNQUFNLEVBQUU7WUFDdkMsRUFBRSxDQUFDLEVBQUUsQ0FBQyxHQUFHLENBQUMsRUFBRSxDQUFDLEVBQUUsQ0FBQyxHQUFHLENBQUMsR0FBRyxNQUFNLEVBQUU7U0FDaEMsQ0FBQyxDQUFDLDJEQUEyRCxFQUFFLENBQUMsUUFBWSxFQUFFLEVBQUU7WUFDL0UsTUFBTSxDQUFDLFFBQVEsQ0FBQyxRQUFRLENBQUMsRUFBRSxHQUFHLElBQUEsMkJBQWUsR0FBRSxFQUFFLENBQUMsRUFBRSxRQUFRLENBQUMsQ0FBQyxFQUFFLENBQUMsRUFBRSxRQUFRLENBQUMsQ0FBQyxFQUFFLENBQUMsQ0FBQyxDQUFDLElBQUksQ0FBQyxJQUFJLENBQUMsQ0FBQztRQUMvRixDQUFDLENBQUMsQ0FBQztRQUNILEVBQUUsQ0FBQyxJQUFJLENBQUs7WUFDVixFQUFFLENBQUMsRUFBRSxDQUFDLEdBQUcsQ0FBQyxHQUFHLE1BQU0sR0FBRyxLQUFLLEVBQUUsQ0FBQyxFQUFFLENBQUMsR0FBRyxDQUFDLEdBQUcsTUFBTSxFQUFFO1lBQ2hELEVBQUUsQ0FBQyxFQUFFLENBQUMsR0FBRyxDQUFDLEdBQUcsTUFBTSxFQUFFLENBQUMsRUFBRSxDQUFDLEdBQUcsQ0FBQyxHQUFHLE1BQU0sRUFBRTtZQUN4QyxFQUFFLENBQUMsRUFBRSxDQUFDLEdBQUcsQ0FBQyxHQUFHLE1BQU0sR0FBRyxLQUFLLEVBQUUsQ0FBQyxFQUFFLENBQUMsR0FBRyxDQUFDLEdBQUcsTUFBTSxHQUFHLE1BQU0sRUFBRTtZQUN6RCxFQUFFLENBQUMsRUFBRSxDQUFDLEdBQUcsQ0FBQyxHQUFHLE1BQU0sRUFBRSxDQUFDLEVBQUUsQ0FBQyxHQUFHLENBQUMsR0FBRyxNQUFN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
