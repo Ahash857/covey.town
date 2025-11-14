@@ -59,7 +59,18 @@ export default class TownGameScene extends Phaser.Scene {
   public coveyTownController: TownController;
 
   private _onGameReadyListeners: Callback[] = [];
+  private _emoteMenuContainer?: Phaser.GameObjects.Container;
+  private _isEmoteMenuOpen = false;
+  private _emoteMenuCooldownMs = 5000; // 1 second between opens
+  private _lastEmoteMenuOpenTime = 0;
+  private _emoteMenuOffsetX = 180;
+  private _emoteMenuOffsetY = 120;
 
+  private _emoteAnimations: Record<string, string> = {
+    //TODO: add other emotes here
+    'mimimi-spritesheet': 'mimimiAnim',
+    'laugh-spritesheet' : 'laughAnim',
+  };
   /**
    * Layers that the player can collide with.
    */
@@ -127,12 +138,32 @@ export default class TownGameScene extends Phaser.Scene {
       '16_Grocery_store_32x32',
       this._resourcePathPrefix + '/assets/tilesets/16_Grocery_store_32x32.png',
     );
+    this.load.image(
+      'emoteMenu',
+      this._resourcePathPrefix + '/assets/emotes/emote-menu.png',
+    );
+    this.load.image(
+      'mimimi-static',
+      this._resourcePathPrefix + '/assets/emotes/mimimi-static.png',
+    );
+    this.load.image(
+      'laugh-static',
+      this._resourcePathPrefix + '/assets/emotes/laugh-static.png',
+    );
     this.load.spritesheet(
-      'emotePlaceholder',
+      'mimimi-spritesheet',
       this._resourcePathPrefix + '/assets/emotes/spritesheets/mimimi.png',
       {
         frameWidth: 354,
         frameHeight: 266,
+      },
+    );
+    this.load.spritesheet(
+      'laugh-spritesheet',
+      this._resourcePathPrefix + '/assets/emotes/spritesheets/laugh-spritesheet.png',
+      {
+        frameWidth: 480,
+        frameHeight: 480,
       },
     );
     this.load.tilemapTiledJSON('map', this._resourcePathPrefix + '/assets/tilemaps/indoors.json');
@@ -297,6 +328,17 @@ export default class TownGameScene extends Phaser.Scene {
           player.gameObjects.label.setY(player.gameObjects.sprite.body.y - 20);
         }
       }
+
+      if (this._isEmoteMenuOpen && this._emoteMenuContainer) {
+        const ourPlayer = this.coveyTownController.ourPlayer;
+        const playerSpriteFollow = ourPlayer.gameObjects?.sprite;
+        if (playerSpriteFollow) {
+          this._emoteMenuContainer.x =
+            playerSpriteFollow.x + this._emoteMenuOffsetX;
+          this._emoteMenuContainer.y =
+            playerSpriteFollow.y + this._emoteMenuOffsetY;
+        }
+      }
     }
   }
 
@@ -419,12 +461,15 @@ export default class TownGameScene extends Phaser.Scene {
     // The server rebroadcasts the event to every client
     const keyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
     keyE.on('down', () => {
-      this.coveyTownController.emitEmote('emotePlaceholder');
+      this.coveyTownController.toggleEmoteMenu();
     });
     // Listen for emote broadcasts from the TownController and display the effect
     // above the correct player's sprite.
     this.coveyTownController.addListener('emote', data => {
       this.showEmote(data.playerID, data.emoteID);
+    });
+    this.coveyTownController.addListener('toggleEmoteMenu', () => {
+      this.toggleEmoteMenu();
     });
 
     // Create a sprite with physics enabled via the physics system. The image used for the sprite
@@ -507,17 +552,25 @@ export default class TownGameScene extends Phaser.Scene {
       frameRate: 10,
       repeat: -1,
     });
-    if (!this.anims.exists('mimimiAnim')) {
-      this.anims.create({
-        key: 'mimimiAnim',
-        frames: this.anims.generateFrameNumbers('emotePlaceholder', {
-          start: 0,
-          end: 72,
-        }),
-        frameRate: 30, 
-        repeat: 0,
-      });
-    }
+    this.anims.create({
+      key: 'mimimiAnim',
+      frames: this.anims.generateFrameNumbers('mimimi-spritesheet', {
+        start: 0,
+        end: 72,
+       }),
+       frameRate: 30, 
+       repeat: 0,
+    });
+    this.anims.create({
+      key: 'laughAnim',
+      frames: this.anims.generateFrameNumbers('laugh-spritesheet', {
+        start: 0,
+        end: 71,
+       }),
+       frameRate: 30, 
+       repeat: 0,
+    });
+    
 
     const camera = this.cameras.main;
     camera.startFollow(this.coveyTownController.ourPlayer.gameObjects.sprite);
@@ -543,6 +596,126 @@ export default class TownGameScene extends Phaser.Scene {
     this._onGameReadyListeners.forEach(listener => listener());
     this._onGameReadyListeners = [];
     this.coveyTownController.addListener('playersChanged', players => this.updatePlayers(players));
+  }
+
+  private applyHoverEffect(
+    icon: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite,
+    sinkOffset = 6,
+    scaleMultiplier = 1.08,
+  ) {
+    
+    const baseY = icon.y;
+    const baseScaleX = icon.scaleX;
+    const baseScaleY = icon.scaleY;
+
+    icon.on('pointerover', () => {
+      this.tweens.add({
+        targets: icon,
+        y: baseY + sinkOffset, // "sink" down a bit
+        scaleX: baseScaleX * scaleMultiplier,
+        scaleY: baseScaleY * scaleMultiplier,
+        duration: 120,
+        ease: 'Quad.easeOut',
+      });
+    });
+
+    icon.on('pointerout', () => {
+      this.tweens.add({
+        targets: icon,
+        y: baseY, // go back to original Y
+        scaleX: baseScaleX,
+        scaleY: baseScaleY,
+        duration: 120,
+        ease: 'Quad.easeOut',
+      });
+    });
+  }
+  private toggleEmoteMenu() {
+    if (this._isEmoteMenuOpen) {
+      this.closeEmoteMenu();
+      return;
+    }
+
+    const now = this.time.now; 
+    if (now - this._lastEmoteMenuOpenTime < this._emoteMenuCooldownMs) {
+      return;
+    }
+
+    this._lastEmoteMenuOpenTime = now;
+    this.openEmoteMenu();
+  }
+
+  private _emoteList = [
+    { id: 'mimimi-spritesheet', icon: 'mimimi-static' },
+    { id: 'laugh-spritesheet', icon: 'laugh-static' },
+  
+  ];
+  private openEmoteMenu() {
+    this._isEmoteMenuOpen = true;
+
+    const ourPlayer = this.coveyTownController.ourPlayer;
+    const playerSprite = ourPlayer.gameObjects?.sprite;
+    if (!playerSprite) {
+      return;
+    }
+
+    const menuX = playerSprite.x + this._emoteMenuOffsetX;
+    const menuY = playerSprite.y + this._emoteMenuOffsetY;
+
+    const bg = this.add.image(0, 0, 'emoteMenu').setScale(0.8);
+
+    const container = this.add.container(menuX, menuY, [bg]).setDepth(100);
+
+    const spacingX = 110;
+    const totalEmotes = this._emoteList.length;
+    const startX = -((totalEmotes - 1) * spacingX) / 2;
+
+    this._emoteList.forEach((emoteDef, index) => {
+      const x = startX + index * spacingX;
+
+      const icon = this.add
+        .image(x, 0, emoteDef.icon)
+        .setScale(0.4)
+        .setInteractive({ useHandCursor: true });
+
+      this.applyHoverEffect(icon);
+
+      icon.on('pointerout', () => {
+        this.tweens.add({
+          targets: icon,
+          y: icon.y - 6,
+          scale: 0.4,
+          duration: 120,
+          ease: 'Quad.easeOut',
+        });
+      });
+
+      icon.on('pointerup', () => {
+        this.handleEmoteSelection(emoteDef.id);
+      });
+
+      container.add(icon);
+    });
+
+    bg.setInteractive();
+    bg.on('pointerup', () => {
+      this.closeEmoteMenu();
+    });
+
+    this._emoteMenuContainer = container;
+  }
+
+  private closeEmoteMenu() {
+    this._isEmoteMenuOpen = false;
+    if (this._emoteMenuContainer) {
+      this._emoteMenuContainer.destroy(true);
+      this._emoteMenuContainer = undefined;
+    }
+  }
+
+  private handleEmoteSelection(emoteID: string) {
+    this.coveyTownController.emitEmote(emoteID);
+    this.closeEmoteMenu();
   }
 
   private showEmote(playerID: string, emoteID: string) {
@@ -573,7 +746,7 @@ export default class TownGameScene extends Phaser.Scene {
       },
     });
 
-    const animKey = 'mimimiAnim';
+    const animKey = this._emoteAnimations[emoteID] ?? 'mimimiAnim';
 
     emoteSprite.play(animKey);
 

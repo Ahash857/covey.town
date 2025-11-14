@@ -115,6 +115,7 @@ export type TownEvents = {
    * and do not require server-side storage or state.
    */
   emote: (data: { playerID: string; emoteID: string }) => void;
+  toggleEmoteMenu: () => void;
 };
 
 /**
@@ -563,6 +564,10 @@ export default class TownController extends (EventEmitter as new () => TypedEmit
       playerID: ourPlayer.id,
       emoteID,
     });
+  }
+
+  public toggleEmoteMenu() {
+    this.emit('toggleEmoteMenu');
   }
   /**
    * Update the settings of the current town. Sends the request to update the settings to the townService,

@@ -105,10 +105,10 @@ export default function TownMap(): JSX.Element {
   const handleEmoteClick = () => {
     if (isCoolingDown) return;
 
-    coveyTownController.emitEmote('emotePlaceholder');
+    coveyTownController.toggleEmoteMenu();
 
     setIsCoolingDown(true);
-    setTimeout(() => setIsCoolingDown(false), 2000); // 2 second cooldown
+    setTimeout(() => setIsCoolingDown(false), 5000);
   };
   return (
     <div id='app-container'>
