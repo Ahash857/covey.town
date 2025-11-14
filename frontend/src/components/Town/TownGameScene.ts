@@ -127,9 +127,13 @@ export default class TownGameScene extends Phaser.Scene {
       '16_Grocery_store_32x32',
       this._resourcePathPrefix + '/assets/tilesets/16_Grocery_store_32x32.png',
     );
-    this.load.image(
+    this.load.spritesheet(
       'emotePlaceholder',
-      this._resourcePathPrefix + '/assets/emotes/mimimi.png',
+      this._resourcePathPrefix + '/assets/emotes/mimimi-spritesheet.png',
+      {
+        frameWidth: 354,
+        frameHeight: 266,
+      },
     );
     this.load.tilemapTiledJSON('map', this._resourcePathPrefix + '/assets/tilemaps/indoors.json');
     this.load.atlas(
@@ -503,6 +507,17 @@ export default class TownGameScene extends Phaser.Scene {
       frameRate: 10,
       repeat: -1,
     });
+    if (!this.anims.exists('mimimiAnim')) {
+      this.anims.create({
+        key: 'mimimiAnim',
+        frames: this.anims.generateFrameNumbers('emotePlaceholder', {
+          start: 0,
+          end: 72,
+        }),
+        frameRate: 10, 
+        repeat: 0,
+      });
+    }
 
     const camera = this.cameras.main;
     camera.startFollow(this.coveyTownController.ourPlayer.gameObjects.sprite);
@@ -538,24 +553,31 @@ export default class TownGameScene extends Phaser.Scene {
     const offsetX = 60;
     const offsetY = -50;
 
-    const emoteSprite = this.add.sprite(
-      playerSprite.x + offsetX,
-      playerSprite.y + offsetY,
-      emoteID,
-    )
+    // create a separate sprite for the emote to keep visuals independent from the
+    // player's animation state and makes it trivial to add or remove without
+    // touching movement / collision logic.
+    const emoteSprite = this.add
+      .sprite(playerSprite.x + offsetX, playerSprite.y + offsetY, emoteID, 0)
       .setDepth(50)
-      .setScale(0.5);
+      .setScale(0.35);
 
     const followInterval = this.time.addEvent({
       delay: 16,
       loop: true,
       callback: () => {
-        if (!emoteSprite.active) return followInterval.remove();
+        if (!emoteSprite.active) {
+          followInterval.remove();
+          return;
+        }
         emoteSprite.setPosition(playerSprite.x + offsetX, playerSprite.y + offsetY);
       },
     });
 
-    this.time.delayedCall(3000, () => {
+    const animKey = 'mimimiAnim';
+
+    emoteSprite.play(animKey);
+
+    emoteSprite.on('animationcomplete', () => {
       emoteSprite.destroy();
       followInterval.remove();
     });
