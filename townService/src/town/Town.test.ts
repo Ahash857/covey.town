@@ -13,6 +13,7 @@ import {
 } from '../TestUtils';
 import {
   ChatMessage,
+  EmoteData,
   Interactable,
   PlayerID,
   PlayerLocation,
@@ -554,6 +555,28 @@ describe('Town', () => {
         expect(player.location).toEqual(newLocation);
       });
     });
+
+    describe('playerEmote', () => {
+      it("Emits playerEmote event",  () => {
+        const emoteHandler = getEventListener(playerTestData.socket, 'playerEmote');
+        const emote: EmoteData = {
+          playerID: player.id,
+          emoteID: "Emotechecking"
+        };
+
+        emoteHandler(emote);
+
+        const emittedEmote = getLastEmittedEvent(townEmitter, 'onEmote')
+        expect(emittedEmote).toEqual(emote)
+      });
+      it('does not forward updates to the ENTIRE town', () => {
+        expect(
+          // getLastEmittedEvent will throw an error if no event was emitted, which we expect to be the case here
+          () => getLastEmittedEvent(townEmitter, 'onEmote'),
+        ).toThrowError();
+      });
+    });
+
     describe('interactableUpdate', () => {
       let interactableUpdateCallback: (update: Interactable) => void;
       let update: ViewingAreaModel;
