@@ -832,6 +832,94 @@ export default class TownGameScene extends Phaser.Scene {
        frameRate: 30, 
        repeat: 0,
     });
+
+    // Calling Animation
+    this.anims.create({
+      key: 'CallingAnim',
+      frames: this.anims.generateFrameNumbers('Calling-spritesheet', {
+        start: 0,
+        end: 39, 
+      }),
+      frameRate: 30,
+      repeat: 0,
+    });
+
+    // CheckMark Animation
+    this.anims.create({
+      key: 'CheckMarkAnim',
+      frames: this.anims.generateFrameNumbers('CheckMark-spritesheet', {
+        start: 0,
+        end: 11, 
+      }),
+      frameRate: 30,
+      repeat: 0,
+    });
+
+    // LaughingFace Animation
+    this.anims.create({
+      key: 'LaughingFaceAnim',
+      frames: this.anims.generateFrameNumbers('LaughingFace-spritesheet', {
+        start: 0,
+        end: 24,
+      }),
+      frameRate: 30,
+      repeat: 0,
+    });
+
+    // LightBulb Animation
+    this.anims.create({
+      key: 'LightBulbAnim',
+      frames: this.anims.generateFrameNumbers('LightBulb-spritesheet', {
+        start: 0,
+        end: 40, 
+      }),
+      frameRate: 30,
+      repeat: 0,
+    });
+
+    // MindBlown Animation
+    this.anims.create({
+      key: 'MindBlownAnim',
+      frames: this.anims.generateFrameNumbers('MindBlown-spritesheet', {
+        start: 0,
+        end: 31, 
+      }),
+      frameRate: 30,
+      repeat: 0,
+    });
+
+    // PartyPopper Animation
+    this.anims.create({
+      key: 'PartyPopperAnim',
+      frames: this.anims.generateFrameNumbers('PartyPopper-spritesheet', {
+        start: 0,
+        end: 62, 
+      }),
+      frameRate: 30,
+      repeat: 0,
+    });
+
+    // ThinkingFace Animation
+    this.anims.create({
+      key: 'ThinkingFaceAnim',
+      frames: this.anims.generateFrameNumbers('ThinkingFace-spritesheet', {
+        start: 0,
+        end: 29,
+      }),
+      frameRate: 30,
+      repeat: 0,
+    });
+
+    // ThumbsUp Animation
+    this.anims.create({
+      key: 'ThumbsUpAnim',
+      frames: this.anims.generateFrameNumbers('ThumbsUp-spritesheet', {
+        start: 0,
+        end: 19, 
+      }),
+      frameRate: 30,
+      repeat: 0,
+    });
     
 
     const camera = this.cameras.main;
@@ -910,6 +998,15 @@ export default class TownGameScene extends Phaser.Scene {
   private _emoteList = [
     { id: 'mimimi-spritesheet', icon: 'mimimi-static' },
     { id: 'laugh-spritesheet', icon: 'laugh-static' },
+
+    { id: 'Calling-spritesheet', icon: 'Calling-static' },
+    { id: 'CheckMark-spritesheet', icon: 'CheckMark-static' },
+    { id: 'LaughingFace-spritesheet', icon: 'LaughingFace-static' },
+    { id: 'LightBulb-spritesheet', icon: 'LightBulb-static' },
+    { id: 'MindBlown-spritesheet', icon: 'MindBlown-static' },
+    { id: 'PartyPopper-spritesheet', icon: 'PartyPopper-static' },
+    { id: 'ThinkingFace-spritesheet', icon: 'ThinkingFace-static' },
+    { id: 'ThumbsUp-spritesheet', icon: 'ThumbsUp-static' },
   
   ];
   private openEmoteMenu() {
@@ -928,25 +1025,34 @@ export default class TownGameScene extends Phaser.Scene {
 
     const container = this.add.container(menuX, menuY, [bg]).setDepth(100);
 
-    const spacingX = 110;
+    const spacingX = 30;
     const totalEmotes = this._emoteList.length;
     const startX = -((totalEmotes - 1) * spacingX) / 2;
+
+    // Maximum emote size
+    const TARGET_SIZE = 60;
 
     this._emoteList.forEach((emoteDef, index) => {
       const x = startX + index * spacingX;
 
-      const icon = this.add
-        .image(x, 0, emoteDef.icon)
-        .setScale(0.4)
-        .setInteractive({ useHandCursor: true });
+      const icon = this.add.image(x, 0, emoteDef.icon)
 
+      //get the size of the image
+      const width = icon.width;
+      const height = icon.height;
+
+      // Calculate and set scale to fit within TARGET_SIZE
+      const scaleFactor = TARGET_SIZE / Math.max(width, height);
+      icon.setScale(scaleFactor);
+
+      icon.setInteractive({ useHandCursor: true });
       this.applyHoverEffect(icon);
 
       icon.on('pointerout', () => {
         this.tweens.add({
           targets: icon,
-          y: icon.y - 6,
-          scale: 0.4,
+          y: 0, 
+          scale: scaleFactor,
           duration: 120,
           ease: 'Quad.easeOut',
         });
