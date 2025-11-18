@@ -851,7 +851,7 @@ export default class TownGameScene extends Phaser.Scene {
         start: 0,
         end: 11, 
       }),
-      frameRate: 30,
+      frameRate: 10,
       repeat: 0,
     });
 
@@ -862,7 +862,7 @@ export default class TownGameScene extends Phaser.Scene {
         start: 0,
         end: 24,
       }),
-      frameRate: 30,
+      frameRate: 15,
       repeat: 0,
     });
 
@@ -873,7 +873,7 @@ export default class TownGameScene extends Phaser.Scene {
         start: 0,
         end: 40, 
       }),
-      frameRate: 30,
+      frameRate: 20,
       repeat: 0,
     });
 
@@ -884,7 +884,7 @@ export default class TownGameScene extends Phaser.Scene {
         start: 0,
         end: 31, 
       }),
-      frameRate: 30,
+      frameRate: 15,
       repeat: 0,
     });
 
@@ -906,7 +906,7 @@ export default class TownGameScene extends Phaser.Scene {
         start: 0,
         end: 29,
       }),
-      frameRate: 30,
+      frameRate: 15,
       repeat: 0,
     });
 
@@ -917,7 +917,7 @@ export default class TownGameScene extends Phaser.Scene {
         start: 0,
         end: 19, 
       }),
-      frameRate: 30,
+      frameRate: 15,
       repeat: 0,
     });
     
