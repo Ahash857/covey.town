@@ -77,6 +77,15 @@ export default class TownGameScene extends Phaser.Scene {
     //TODO: add other emotes here
     'mimimi-spritesheet': 'mimimiAnim',
     'laugh-spritesheet' : 'laughAnim',
+    
+    'Calling': 'CallingAnim',
+    'CheckMark': 'CheckMarkAnim',
+    'LaughingFace': 'LaughingFaceAnim',
+    'LightBulb': 'LightBulbAnim',
+    'MindBlown': 'MindBlownAnim',
+    'PartyPopper': 'PartyPopperAnim',
+    'ThinkingFace': 'ThinkingFaceAnim',
+    'ThumbsUp': 'ThumbsUpAnim',
   };
   /**
    * Layers that the player can collide with.
@@ -149,6 +158,8 @@ export default class TownGameScene extends Phaser.Scene {
       'emoteMenu',
       this._resourcePathPrefix + '/assets/emotes/emote-menu.png',
     );
+
+    //REMOVE THIS (TESTING ONLY)
     this.load.image(
       'mimimi-static',
       this._resourcePathPrefix + '/assets/emotes/mimimi-static.png',
@@ -157,6 +168,43 @@ export default class TownGameScene extends Phaser.Scene {
       'laugh-static',
       this._resourcePathPrefix + '/assets/emotes/laugh-static.png',
     );
+    //REMOVE THIS (TESTING ONLY)
+
+    this.load.image(
+      'Calling-static',
+      this._resourcePathPrefix + '/assets/emotes/Calling-static.png',
+    );
+    this.load.image(
+      'CheckMark-static',
+      this._resourcePathPrefix + '/assets/emotes/CheckMark-static.png',
+    );
+    this.load.image(
+      'LaughingFace-static',
+      this._resourcePathPrefix + '/assets/emotes/LaughingFace-static.png',
+    );
+    this.load.image(
+      'LightBulb-static',
+      this._resourcePathPrefix + '/assets/emotes/LightBulb-static.png',
+    );
+    this.load.image(
+      'MindBlown-static',
+      this._resourcePathPrefix + '/assets/emotes/MindBlown-static.png',
+    );
+    this.load.image(
+      'PartyPopper-static',
+      this._resourcePathPrefix + '/assets/emotes/PartyPopper-static.png',
+    );
+    this.load.image(
+      'ThinkingFace-static',
+      this._resourcePathPrefix + '/assets/emotes/ThinkingFace-static.png',
+    );
+    this.load.image(
+      'ThumbsUp-static',
+      this._resourcePathPrefix + '/assets/emotes/ThumbsUp-static.png',
+    );
+
+
+    //REMOVE THIS (TESTING ONLY)
     this.load.spritesheet(
       'mimimi-spritesheet',
       this._resourcePathPrefix + '/assets/emotes/spritesheets/mimimi.png',
@@ -171,6 +219,87 @@ export default class TownGameScene extends Phaser.Scene {
       {
         frameWidth: 480,
         frameHeight: 480,
+      },
+    );
+    //REMOVE THIS (TESTING ONLY)
+
+    // Calling
+    this.load.spritesheet(
+      'Calling-spritesheet',
+      this._resourcePathPrefix + '/assets/emotes/spritesheets/Calling.png',
+      {
+        frameWidth: 200,
+        frameHeight: 200, 
+      },
+    );
+
+    // CheckMark
+    this.load.spritesheet(
+      'CheckMark-spritesheet',
+      this._resourcePathPrefix + '/assets/emotes/spritesheets/CheckMark.png',
+      {
+        frameWidth: 800, 
+        frameHeight: 800, 
+      },
+    );
+
+    // LaughingFace
+    this.load.spritesheet(
+      'LaughingFace-spritesheet',
+      this._resourcePathPrefix + '/assets/emotes/spritesheets/LaughingFace.png',
+      {
+        frameWidth: 360, 
+        frameHeight: 371, 
+      },
+    );
+
+    // LightBulb
+    this.load.spritesheet(
+      'LightBulb-spritesheet',
+      this._resourcePathPrefix + '/assets/emotes/spritesheets/LightBulb.png',
+      {
+        frameWidth: 800, 
+        frameHeight: 785, 
+      },
+    );
+
+    // MindBlown
+    this.load.spritesheet(
+      'MindBlown-spritesheet',
+      this._resourcePathPrefix + '/assets/emotes/spritesheets/MindBlown.png',
+      {
+        frameWidth: 400,
+        frameHeight: 360, 
+      },
+    );
+
+    // PartyPopper
+    this.load.spritesheet(
+      'PartyPopper-spritesheet',
+      this._resourcePathPrefix + '/assets/emotes/spritesheets/PartyPopper.png',
+      {
+        frameWidth: 800, 
+        frameHeight: 850, 
+      },
+    );
+
+    // ThinkingFace
+    this.load.spritesheet(
+      'ThinkingFace-spritesheet',
+      this._resourcePathPrefix + '/assets/emotes/spritesheets/ThinkingFace.png',
+      {
+        frameWidth: 363, 
+        frameHeight: 360, 
+      },
+    );
+
+    // ThumbsUp
+    this.load.spritesheet(
+      'ThumbsUp-spritesheet',
+      this._resourcePathPrefix + '/assets/emotes/spritesheets/ThumbsUp.png',
+      {
+        frameWidth: 800,
+        frameHeight: 518, 
       },
     );
     this.load.tilemapTiledJSON('map', this._resourcePathPrefix + '/assets/tilemaps/indoors.json');
