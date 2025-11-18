@@ -996,9 +996,6 @@ export default class TownGameScene extends Phaser.Scene {
   }
 
   private _emoteList = [
-    { id: 'mimimi-spritesheet', icon: 'mimimi-static' },
-    { id: 'laugh-spritesheet', icon: 'laugh-static' },
-
     { id: 'Calling-spritesheet', icon: 'Calling-static' },
     { id: 'CheckMark-spritesheet', icon: 'CheckMark-static' },
     { id: 'LaughingFace-spritesheet', icon: 'LaughingFace-static' },
@@ -1009,7 +1006,7 @@ export default class TownGameScene extends Phaser.Scene {
     { id: 'ThumbsUp-spritesheet', icon: 'ThumbsUp-static' },
   
   ];
-  private openEmoteMenu() {
+  private openEmoteMenu = () => {
     this._isEmoteMenuOpen = true;
 
     const ourPlayer = this.coveyTownController.ourPlayer;
@@ -1025,7 +1022,7 @@ export default class TownGameScene extends Phaser.Scene {
 
     const container = this.add.container(menuX, menuY, [bg]).setDepth(100);
 
-    const spacingX = 30;
+    const spacingX = 70;
     const totalEmotes = this._emoteList.length;
     const startX = -((totalEmotes - 1) * spacingX) / 2;
 
@@ -1073,7 +1070,7 @@ export default class TownGameScene extends Phaser.Scene {
     this._emoteMenuContainer = container;
   }
 
-  private closeEmoteMenu() {
+  private closeEmoteMenu = () => {
     this._isEmoteMenuOpen = false;
     if (this._emoteMenuContainer) {
       this._emoteMenuContainer.destroy(true);
