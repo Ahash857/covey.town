@@ -9,7 +9,6 @@ import ConversationArea from './interactables/ConversationArea';
 import GameArea from './interactables/GameArea';
 import Transporter from './interactables/Transporter';
 import ViewingArea from './interactables/ViewingArea';
-import findOverlayButton from './interactables/findOverlayButton';
 
 // Still not sure what the right type is here... "Interactable" doesn't do it
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -60,7 +59,25 @@ export default class TownGameScene extends Phaser.Scene {
   public coveyTownController: TownController;
 
   private _onGameReadyListeners: Callback[] = [];
+  private _emoteMenuContainer?: Phaser.GameObjects.Container;
+  private _isEmoteMenuOpen = false;
+  private _emoteMenuCooldownMs = 5000; // 1 second between opens
+  private _lastEmoteMenuOpenTime = 0;
+  private _emoteMenuOffsetX = 190;
+  private _emoteMenuOffsetY = 120;
+  private _activeEmotes: {
+    sprite: Phaser.GameObjects.Sprite;
+    player: PlayerController;
+    offsetX: number;
+    offsetY: number;
+  }[] = [];
 
+
+  private _emoteAnimations: Record<string, string> = {
+    //TODO: add other emotes here
+    'mimimi-spritesheet': 'mimimiAnim',
+    'laugh-spritesheet' : 'laughAnim',
+  };
   /**
    * Layers that the player can collide with.
    */
@@ -127,6 +144,34 @@ export default class TownGameScene extends Phaser.Scene {
     this.load.image(
       '16_Grocery_store_32x32',
       this._resourcePathPrefix + '/assets/tilesets/16_Grocery_store_32x32.png',
+    );
+    this.load.image(
+      'emoteMenu',
+      this._resourcePathPrefix + '/assets/emotes/emote-menu.png',
+    );
+    this.load.image(
+      'mimimi-static',
+      this._resourcePathPrefix + '/assets/emotes/mimimi-static.png',
+    );
+    this.load.image(
+      'laugh-static',
+      this._resourcePathPrefix + '/assets/emotes/laugh-static.png',
+    );
+    this.load.spritesheet(
+      'mimimi-spritesheet',
+      this._resourcePathPrefix + '/assets/emotes/spritesheets/mimimi.png',
+      {
+        frameWidth: 354,
+        frameHeight: 266,
+      },
+    );
+    this.load.spritesheet(
+      'laugh-spritesheet',
+      this._resourcePathPrefix + '/assets/emotes/spritesheets/laugh-spritesheet.png',
+      {
+        frameWidth: 480,
+        frameHeight: 480,
+      },
     );
     this.load.tilemapTiledJSON('map', this._resourcePathPrefix + '/assets/tilemaps/indoors.json');
     this.load.atlas(
@@ -352,6 +397,33 @@ export default class TownGameScene extends Phaser.Scene {
           }
         }
       }
+
+      if (this._isEmoteMenuOpen && this._emoteMenuContainer) {
+        const ourPlayer = this.coveyTownController.ourPlayer;
+        const sprite = ourPlayer.gameObjects?.sprite;
+        const body = sprite?.body as Phaser.Physics.Arcade.Body | undefined;
+
+        if (body) {
+          this._emoteMenuContainer.x = body.x + this._emoteMenuOffsetX;
+          this._emoteMenuContainer.y = body.y + this._emoteMenuOffsetY;
+        }
+      }
+
+      for (const emote of this._activeEmotes) {
+        const playerSprite = emote.player.gameObjects?.sprite;
+        const body = playerSprite?.body as Phaser.Physics.Arcade.Body | undefined;
+        if (!playerSprite || !body || !emote.sprite.active) {
+          continue;
+        }
+
+        const centerX = body.x + body.width / 2;
+        const centerY = body.y + body.height / 2;
+
+        emote.sprite.setPosition(
+          centerX + emote.offsetX,
+          centerY + emote.offsetY,
+        );
+      }
     }
   }
 
@@ -383,8 +455,8 @@ export default class TownGameScene extends Phaser.Scene {
     this._map = this.make.tilemap({ key: 'map' });
 
     /* Parameters are the name you gave the tileset in Tiled and then the key of the
-         tileset image in Phaser's cache (i.e. the name you used in preload)
-         */
+      tileset image in Phaser's cache (i.e. the name you used in preload)
+    */
     const tileset = [
       'Room_Builder_32x32',
       '22_Museum_32x32',
@@ -470,6 +542,20 @@ export default class TownGameScene extends Phaser.Scene {
         false,
       ) as Phaser.Types.Input.Keyboard.CursorKeys,
     );
+    // Capture presses of the "E" key to trigger an emote.
+    // The server rebroadcasts the event to every client
+    const keyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+    keyE.on('down', () => {
+      this.coveyTownController.toggleEmoteMenu();
+    });
+    // Listen for emote broadcasts from the TownController and display the effect
+    // above the correct player's sprite.
+    this.coveyTownController.addListener('emote', data => {
+      this.showEmote(data.playerID, data.emoteID);
+    });
+    this.coveyTownController.addListener('toggleEmoteMenu', () => {
+      this.toggleEmoteMenu();
+    });
 
     // Create a sprite with physics enabled via the physics system. The image used for the sprite
     // has a bit of whitespace, so I'm using setSize & setOffset to control the size of the
@@ -599,6 +685,25 @@ export default class TownGameScene extends Phaser.Scene {
       frameRate: 10,
       repeat: -1,
     });
+    this.anims.create({
+      key: 'mimimiAnim',
+      frames: this.anims.generateFrameNumbers('mimimi-spritesheet', {
+        start: 0,
+        end: 72,
+       }),
+       frameRate: 30, 
+       repeat: 0,
+    });
+    this.anims.create({
+      key: 'laughAnim',
+      frames: this.anims.generateFrameNumbers('laugh-spritesheet', {
+        start: 0,
+        end: 71,
+       }),
+       frameRate: 30, 
+       repeat: 0,
+    });
+    
 
     const camera = this.cameras.main;
     camera.startFollow(this.coveyTownController.ourPlayer.gameObjects.sprite);
@@ -625,6 +730,159 @@ export default class TownGameScene extends Phaser.Scene {
     this._onGameReadyListeners = [];
     this.coveyTownController.addListener('playersChanged', players => this.updatePlayers(players));
   }
+
+  private applyHoverEffect(
+    icon: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite,
+    sinkOffset = 6,
+    scaleMultiplier = 1.08,
+  ) {
+    
+    const baseY = icon.y;
+    const baseScaleX = icon.scaleX;
+    const baseScaleY = icon.scaleY;
+
+    icon.on('pointerover', () => {
+      this.tweens.add({
+        targets: icon,
+        y: baseY + sinkOffset, // "sink" down a bit
+        scaleX: baseScaleX * scaleMultiplier,
+        scaleY: baseScaleY * scaleMultiplier,
+        duration: 120,
+        ease: 'Quad.easeOut',
+      });
+    });
+
+    icon.on('pointerout', () => {
+      this.tweens.add({
+        targets: icon,
+        y: baseY, // go back to original Y
+        scaleX: baseScaleX,
+        scaleY: baseScaleY,
+        duration: 120,
+        ease: 'Quad.easeOut',
+      });
+    });
+  }
+  private toggleEmoteMenu() {
+    if (this._isEmoteMenuOpen) {
+      this.closeEmoteMenu();
+      return;
+    }
+
+    const now = this.time.now; 
+    if (now - this._lastEmoteMenuOpenTime < this._emoteMenuCooldownMs) {
+      return;
+    }
+
+    this._lastEmoteMenuOpenTime = now;
+    this.openEmoteMenu();
+  }
+
+  private _emoteList = [
+    { id: 'mimimi-spritesheet', icon: 'mimimi-static' },
+    { id: 'laugh-spritesheet', icon: 'laugh-static' },
+  
+  ];
+  private openEmoteMenu() {
+    this._isEmoteMenuOpen = true;
+
+    const ourPlayer = this.coveyTownController.ourPlayer;
+    const playerSprite = ourPlayer.gameObjects?.sprite;
+    if (!playerSprite) {
+      return;
+    }
+
+    const menuX = playerSprite.x + this._emoteMenuOffsetX;
+    const menuY = playerSprite.y + this._emoteMenuOffsetY;
+
+    const bg = this.add.image(0, 0, 'emoteMenu').setScale(0.8);
+
+    const container = this.add.container(menuX, menuY, [bg]).setDepth(100);
+
+    const spacingX = 110;
+    const totalEmotes = this._emoteList.length;
+    const startX = -((totalEmotes - 1) * spacingX) / 2;
+
+    this._emoteList.forEach((emoteDef, index) => {
+      const x = startX + index * spacingX;
+
+      const icon = this.add
+        .image(x, 0, emoteDef.icon)
+        .setScale(0.4)
+        .setInteractive({ useHandCursor: true });
+
+      this.applyHoverEffect(icon);
+
+      icon.on('pointerout', () => {
+        this.tweens.add({
+          targets: icon,
+          y: icon.y - 6,
+          scale: 0.4,
+          duration: 120,
+          ease: 'Quad.easeOut',
+        });
+      });
+
+      icon.on('pointerup', () => {
+        this.handleEmoteSelection(emoteDef.id);
+      });
+
+      container.add(icon);
+    });
+
+    bg.setInteractive();
+    bg.on('pointerup', () => {
+      this.closeEmoteMenu();
+    });
+
+    this._emoteMenuContainer = container;
+  }
+
+  private closeEmoteMenu() {
+    this._isEmoteMenuOpen = false;
+    if (this._emoteMenuContainer) {
+      this._emoteMenuContainer.destroy(true);
+      this._emoteMenuContainer = undefined;
+    }
+  }
+
+  private handleEmoteSelection(emoteID: string) {
+    this.coveyTownController.emitEmote(emoteID);
+    this.closeEmoteMenu();
+  }
+
+  private showEmote(playerID: string, emoteID: string) {
+    const player = this.coveyTownController.getPlayer(playerID);
+    if (!player.gameObjects) return;
+
+    const playerSprite = player.gameObjects.sprite;
+    const body = playerSprite.body as Phaser.Physics.Arcade.Body | undefined;
+    if (!body) return;
+
+    const offsetX = 70;
+    const offsetY = -50;
+
+    const centerX = body.x + body.width / 2;
+    const centerY = body.y + body.height / 2;
+
+    const emoteSprite = this.add
+      .sprite(centerX + offsetX, centerY + offsetY, emoteID, 0)
+      .setDepth(50)
+      .setScale(0.35);
+
+    const animKey = this._emoteAnimations[emoteID] ?? 'mimimiAnim';
+    emoteSprite.play(animKey);
+
+    this._activeEmotes.push({ sprite: emoteSprite, player, offsetX, offsetY });
+
+    emoteSprite.on('animationcomplete', () => {
+      emoteSprite.destroy();
+      
+      this._activeEmotes = this._activeEmotes.filter(e => e.sprite !== emoteSprite);
+    });
+  }
+
+
 
   createPlayerSprites(player: PlayerController) {
     if (!player.gameObjects) {

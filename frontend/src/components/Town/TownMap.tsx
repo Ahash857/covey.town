@@ -12,6 +12,7 @@ import clsx from 'clsx';
 import { createStyles, makeStyles, Theme } from '@material-ui/core';
 import FindOverlayButton from './interactables/FindOverlayButton';
 
+
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     chatWindowContainer: {
@@ -37,6 +38,26 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     hide: {
       display: 'none',
+    },
+    emoteBubble: {
+      position: 'fixed',
+      top: '5%',
+      transform: 'translateY(-50%)',
+      zIndex: 900,
+      cursor: 'pointer',
+      pointerEvents: 'auto',
+      right: '270px',
+      transition: 'transform 0.15s ease, opacity 0.15s ease',
+      '&:hover': {
+        transform: 'translateY(-50%) scale(0.95)',
+      },
+      [theme.breakpoints.down('sm')]: {
+        right: '70px',
+      },
+    },
+    emoteImage: {
+      width: 100,
+      height: 100,
     },
   }),
 );
@@ -81,7 +102,15 @@ export default function TownMap(): JSX.Element {
       game.destroy(true);
     };
   }, [coveyTownController]);
+  const [isCoolingDown, setIsCoolingDown] = React.useState(false);
+  const handleEmoteClick = () => {
+    if (isCoolingDown) return;
 
+    coveyTownController.toggleEmoteMenu();
+
+    setIsCoolingDown(true);
+    setTimeout(() => setIsCoolingDown(false), 5000);
+  };
   return (
     <div id='app-container'>
       <NewConversationModal />
@@ -91,6 +120,17 @@ export default function TownMap(): JSX.Element {
       </aside>
 
       <div id='map-container' />
+     <div
+      className={classes.emoteBubble}
+      onClick={handleEmoteClick}
+      style={{ opacity: isCoolingDown ? 0.5 : 1, pointerEvents: isCoolingDown ? 'none' : 'auto' }}
+    >
+        <img
+          src='/assets/emotes/emote-bubble.png' 
+          alt='Open emote menu'
+          className={classes.emoteImage}
+        />
+      </div>
       <div id='social-container'>
         <SocialSidebar />
       </div>
