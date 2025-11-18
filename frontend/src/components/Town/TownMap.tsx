@@ -126,7 +126,7 @@ export default function TownMap(): JSX.Element {
     >
         <img
           src='/assets/emotes/emote-bubble.png' 
-          alt='Send emote'
+          alt='Open emote menu'
           className={classes.emoteImage}
         />
       </div>
