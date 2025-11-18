@@ -154,6 +154,14 @@ export default class Town {
       }
     });
 
+    // If player calls emote, emits player ID and emoteID to all clients in the server
+    socket.on('playerEmote', (data: { playerID: string; emoteID: string }) => {
+      this._broadcastEmitter.emit('onEmote', {
+        playerID: data.playerID,
+        emoteID: data.emoteID,
+      });
+    });
+
     // Set up a listener to process updates to interactables.
     // Currently only knows how to process updates for ViewingArea's, and
     // ignores any other updates for any other kind of interactable.
@@ -213,13 +221,6 @@ export default class Town {
           error: `No such interactable ${command.interactableID}`,
         });
       }
-    });
-    // When a client triggers an emote, we re-emit it to all other players in the town.
-    socket.on('emote', (data: { playerID: string; emoteID: string }) => {
-      this._broadcastEmitter.emit('emote', {
-        playerID: data.playerID,
-        emoteID: data.emoteID,
-      });
     });
     return newPlayer;
   }

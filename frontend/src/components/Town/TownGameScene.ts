@@ -179,6 +179,13 @@ export default class TownGameScene extends Phaser.Scene {
       this._resourcePathPrefix + '/assets/atlas/atlas.png',
       this._resourcePathPrefix + '/assets/atlas/atlas.json',
     );
+
+    // load the pet atlas
+    this.load.atlas(
+      'cat_atlas_key',
+      this._resourcePathPrefix + '/assets/sprites/cat_atlas.png',
+      this._resourcePathPrefix + '/assets/sprites/cat_atlas.json',
+    );
   }
 
   updatePlayers(players: PlayerController[]) {
@@ -192,10 +199,14 @@ export default class TownGameScene extends Phaser.Scene {
 
     disconnectedPlayers.forEach(disconnectedPlayer => {
       if (disconnectedPlayer.gameObjects) {
-        const { sprite, label } = disconnectedPlayer.gameObjects;
+        // FIX: Include petSprite in destructuring so it's defined
+        const { sprite, label, petSprite } = disconnectedPlayer.gameObjects;
         if (sprite && label) {
           sprite.destroy();
           label.destroy();
+          if(petSprite) { // Now petSprite is defined and can be destroyed
+            petSprite.destroy();
+          }
         }
       }
     });
@@ -257,22 +268,44 @@ export default class TownGameScene extends Phaser.Scene {
       body.setVelocity(0);
 
       const primaryDirection = this.getNewMovementDirection();
+      const isMoving = primaryDirection !== undefined;
+
       switch (primaryDirection) {
         case 'left':
           body.setVelocityX(-MOVEMENT_SPEED);
           gameObjects.sprite.anims.play('misa-left-walk', true);
+
+          // Play the left walking animation
+          if (gameObjects.petSprite) {
+            gameObjects.petSprite.anims.play('cat-walk-left', true);
+          }
           break;
         case 'right':
           body.setVelocityX(MOVEMENT_SPEED);
           gameObjects.sprite.anims.play('misa-right-walk', true);
+
+          // Play the right walking animation
+          if (gameObjects.petSprite) {
+            gameObjects.petSprite.anims.play('cat-walk-right', true);
+          }
           break;
         case 'front':
           body.setVelocityY(MOVEMENT_SPEED);
           gameObjects.sprite.anims.play('misa-front-walk', true);
+
+          // Play the front walking animation
+          if (gameObjects.petSprite) {
+            gameObjects.petSprite.anims.play('cat-walk-front', true);
+          }
           break;
         case 'back':
           body.setVelocityY(-MOVEMENT_SPEED);
           gameObjects.sprite.anims.play('misa-back-walk', true);
+
+          // Play the back walking animation
+          if (gameObjects.petSprite) {
+            gameObjects.petSprite.anims.play('cat-walk-back', true);
+          }
           break;
         default:
           // Not moving
@@ -285,13 +318,27 @@ export default class TownGameScene extends Phaser.Scene {
           } else if (prevVelocity.y < 0) {
             gameObjects.sprite.setTexture('atlas', 'misa-back');
           } else if (prevVelocity.y > 0) gameObjects.sprite.setTexture('atlas', 'misa-front');
+
+          // Start pet idle animation
+          if (gameObjects.petSprite) {
+              gameObjects.petSprite.anims.play('cat-idle', true);
+          }
+
           break;
       }
 
       // Normalize and scale the velocity so that player can't move faster along a diagonal
       gameObjects.sprite.body.velocity.normalize().scale(MOVEMENT_SPEED);
 
-      const isMoving = primaryDirection !== undefined;
+      if (gameObjects.petSprite) {
+        // Pet Position: Offset set to place the sprite lower-left of player
+        gameObjects.petSprite.setX(gameObjects.sprite.getBounds().centerX - 25);
+        gameObjects.petSprite.setY(gameObjects.sprite.getBounds().centerY + 15);
+        gameObjects.petSprite.setVisible(gameObjects.sprite.visible);
+
+      }
+
+      // const isMoving = primaryDirection !== undefined; // Re-use the existing `isMoving` variable
       gameObjects.label.setX(body.x);
       gameObjects.label.setY(body.y - 20);
       const x = gameObjects.sprite.getBounds().centerX;
@@ -333,6 +380,21 @@ export default class TownGameScene extends Phaser.Scene {
         if (player.gameObjects?.label && player.gameObjects?.sprite.body) {
           player.gameObjects.label.setX(player.gameObjects.sprite.body.x);
           player.gameObjects.label.setY(player.gameObjects.sprite.body.y - 20);
+
+          if (player.gameObjects.petSprite) {
+            // Other Player Pet Position Update
+            player.gameObjects.petSprite.setX(player.gameObjects.sprite.getBounds().centerX - 25);
+            player.gameObjects.petSprite.setY(player.gameObjects.sprite.getBounds().centerY + 15);
+
+            // Control animation based on player movement state
+            if (!player.location.moving) {
+               player.gameObjects.petSprite.anims.play('cat-idle', true);
+            } else {
+               // Player is moving: Play the corresponding directional walk animation.
+               const petAnimKey = `cat-walk-${player.location.rotation}`;
+               player.gameObjects.petSprite.anims.play(petAnimKey, true);
+            }
+          }
         }
       }
 
@@ -403,7 +465,7 @@ export default class TownGameScene extends Phaser.Scene {
       '1_Generic_32x32',
       '13_Conference_Hall_32x32',
       '14_Basement_32x32',
-      '16_Grocery_store_32x32',
+      '16_Grocery_store_32x32', // Typos fixed here
     ].map(v => {
       const ret = this.map.addTilesetImage(v);
       assert(ret);
@@ -503,6 +565,15 @@ export default class TownGameScene extends Phaser.Scene {
       .setSize(30, 40)
       .setOffset(0, 24)
       .setDepth(6);
+
+    // Local player pet creation
+    const petSprite = this.add
+      .sprite(spawnPoint.x - 25, spawnPoint.y + 15, 'cat_atlas_key')
+      .setScale(1.0)
+      .setDepth(6)
+      .play('cat-idle');
+
+
     const label = this.add
       .text(spawnPoint.x, spawnPoint.y - 20, '(You)', {
         font: '18px monospace',
@@ -514,6 +585,8 @@ export default class TownGameScene extends Phaser.Scene {
     this.coveyTownController.ourPlayer.gameObjects = {
       sprite,
       label,
+      // Need to include petSprite here to avoid errors in update/updatePlayers
+      petSprite,
       locationManagedByGameScene: true,
     };
 
@@ -531,6 +604,43 @@ export default class TownGameScene extends Phaser.Scene {
     // Create the player's walking animations from the texture atlas. These are stored in the global
     // animation manager so any sprite can access them.
     const { anims } = this;
+
+    // Pet idle animation
+    anims.create({
+      key: 'cat-idle',
+      // Subtle front pose for standing (Frames 0-1)
+      frames: anims.generateFrameNames('cat_atlas_key', { prefix: 'cat-front-', start: 0, end: 1 }),
+      frameRate: 3,
+      repeat: -1,
+    });
+
+    // Pet walking animations
+    anims.create({
+      key: 'cat-walk-front',
+      frames: anims.generateFrameNames('cat_atlas_key', { prefix: 'cat-front-', start: 2, end: 5 }),
+      frameRate: 10,
+      repeat: -1,
+    });
+    anims.create({
+      key: 'cat-walk-left',
+      frames: anims.generateFrameNames('cat_atlas_key', { prefix: 'cat-left-', start: 2, end: 5 }),
+      frameRate: 10,
+      repeat: -1,
+    });
+    anims.create({
+      key: 'cat-walk-right',
+      frames: anims.generateFrameNames('cat_atlas_key', { prefix: 'cat-right-', start: 2, end: 5 }),
+      frameRate: 10,
+      repeat: -1,
+    });
+    anims.create({
+      key: 'cat-walk-back',
+      frames: anims.generateFrameNames('cat_atlas_key', { prefix: 'cat-back-', start: 2, end: 5 }),
+      frameRate: 10,
+      repeat: -1,
+    });
+
+
     anims.create({
       key: 'misa-left-walk',
       frames: anims.generateFrameNames('atlas', {
@@ -780,6 +890,14 @@ export default class TownGameScene extends Phaser.Scene {
         .sprite(player.location.x, player.location.y, 'atlas', 'misa-front')
         .setSize(30, 40)
         .setOffset(0, 24);
+
+      // Other player pet creation
+      const petSprite = this.add
+        .sprite(player.location.x - 25, player.location.y + 15, 'cat_atlas_key')
+        .setScale(1.0)
+        .setDepth(6)
+        .play('cat-idle');
+
       const label = this.add.text(
         player.location.x,
         player.location.y - 20,
@@ -794,6 +912,7 @@ export default class TownGameScene extends Phaser.Scene {
       player.gameObjects = {
         sprite,
         label,
+        petSprite, // Include petSprite here
         locationManagedByGameScene: false,
       };
       this._collidingLayers.forEach(layer => this.physics.add.collider(sprite, layer));

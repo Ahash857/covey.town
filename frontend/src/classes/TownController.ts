@@ -403,7 +403,7 @@ export default class TownController extends (EventEmitter as new () => TypedEmit
    * This allows the UI to react to emotes the same way it reacts to movement or chat,
    * without needing direct access to socket events.
    */
-    this._socket.on('emote', data => {
+    this._socket.on('onEmote', data => {
       this.emit('emote', data);
     });
     /**
@@ -560,7 +560,7 @@ export default class TownController extends (EventEmitter as new () => TypedEmit
   public emitEmote(emoteID: string) {
     const ourPlayer = this._ourPlayer;
     assert(ourPlayer);
-    this._socket.emit('emote', {
+    this._socket.emit('playerEmote', {
       playerID: ourPlayer.id,
       emoteID,
     });
