@@ -566,7 +566,7 @@ export default class TownController extends (EventEmitter as new () => TypedEmit
     });
   }
 
-  public toggleEmoteMenu() {
+  public toggleEmoteMenu = () => {
     this.emit('toggleEmoteMenu');
   }
   /**

@@ -78,14 +78,14 @@ export default class TownGameScene extends Phaser.Scene {
     'mimimi-spritesheet': 'mimimiAnim',
     'laugh-spritesheet' : 'laughAnim',
     
-    'Calling': 'CallingAnim',
-    'CheckMark': 'CheckMarkAnim',
-    'LaughingFace': 'LaughingFaceAnim',
-    'LightBulb': 'LightBulbAnim',
-    'MindBlown': 'MindBlownAnim',
-    'PartyPopper': 'PartyPopperAnim',
-    'ThinkingFace': 'ThinkingFaceAnim',
-    'ThumbsUp': 'ThumbsUpAnim',
+    'Calling-spritesheet': 'CallingAnim',
+    'CheckMark-spritesheet': 'CheckMarkAnim',
+    'LaughingFace-spritesheet': 'LaughingFaceAnim',
+    'LightBulb-spritesheet': 'LightBulbAnim',
+    'MindBlown-spritesheet': 'MindBlownAnim',
+    'PartyPopper-spritesheet': 'PartyPopperAnim',
+    'ThinkingFace-spritesheet': 'ThinkingFaceAnim',
+    'ThumbsUp-spritesheet': 'ThumbsUpAnim',
   };
   /**
    * Layers that the player can collide with.
@@ -948,11 +948,11 @@ export default class TownGameScene extends Phaser.Scene {
     this.coveyTownController.addListener('playersChanged', players => this.updatePlayers(players));
   }
 
-  private applyHoverEffect(
+  private applyHoverEffect = (
     icon: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite,
     sinkOffset = 6,
     scaleMultiplier = 1.08,
-  ) {
+  ) => {
     
     const baseY = icon.y;
     const baseScaleX = icon.scaleX;
@@ -980,7 +980,7 @@ export default class TownGameScene extends Phaser.Scene {
       });
     });
   }
-  private toggleEmoteMenu() {
+  private toggleEmoteMenu = () => {
     if (this._isEmoteMenuOpen) {
       this.closeEmoteMenu();
       return;
@@ -1078,12 +1078,12 @@ export default class TownGameScene extends Phaser.Scene {
     }
   }
 
-  private handleEmoteSelection(emoteID: string) {
+  private handleEmoteSelection = (emoteID: string) => {
     this.coveyTownController.emitEmote(emoteID);
     this.closeEmoteMenu();
   }
 
-  private showEmote(playerID: string, emoteID: string) {
+  private showEmote = (playerID: string, emoteID: string) => {
     const player = this.coveyTownController.getPlayer(playerID);
     if (!player.gameObjects) return;
 
