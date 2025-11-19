@@ -41,7 +41,7 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     emoteBubble: {
       position: 'fixed',
-      top: '5%',
+      top: '10%',
       transform: 'translateY(-50%)',
       zIndex: 900,
       cursor: 'pointer',
