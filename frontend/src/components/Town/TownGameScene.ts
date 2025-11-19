@@ -631,12 +631,6 @@ export default class TownGameScene extends Phaser.Scene {
         false,
       ) as Phaser.Types.Input.Keyboard.CursorKeys,
     );
-    // Capture presses of the "E" key to trigger an emote.
-    // The server rebroadcasts the event to every client
-    const keyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
-    keyE.on('down', () => {
-      this.coveyTownController.toggleEmoteMenu();
-    });
     // Listen for emote broadcasts from the TownController and display the effect
     // above the correct player's sprite.
     this.coveyTownController.addListener('emote', data => {
