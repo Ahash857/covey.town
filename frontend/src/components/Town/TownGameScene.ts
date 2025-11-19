@@ -64,7 +64,7 @@ export default class TownGameScene extends Phaser.Scene {
   private _emoteMenuCooldownMs = 5000; // 1 second between opens
   private _lastEmoteMenuOpenTime = 0;
   private _emoteMenuOffsetX = 190;
-  private _emoteMenuOffsetY = 120;
+  private _emoteMenuOffsetY = 110;
   private _activeEmotes: {
     sprite: Phaser.GameObjects.Sprite;
     player: PlayerController;
@@ -878,7 +878,7 @@ export default class TownGameScene extends Phaser.Scene {
     icon.on('pointerover', () => {
       this.tweens.add({
         targets: icon,
-        y: baseY + sinkOffset, // "sink" down a bit
+        y: baseY + sinkOffset, 
         scaleX: baseScaleX * scaleMultiplier,
         scaleY: baseScaleY * scaleMultiplier,
         duration: 120,
@@ -889,7 +889,7 @@ export default class TownGameScene extends Phaser.Scene {
     icon.on('pointerout', () => {
       this.tweens.add({
         targets: icon,
-        y: baseY, // go back to original Y
+        y: baseY, 
         scaleX: baseScaleX,
         scaleY: baseScaleY,
         duration: 120,
@@ -935,7 +935,7 @@ export default class TownGameScene extends Phaser.Scene {
   const menuX = playerSprite.x + this._emoteMenuOffsetX;
   const menuY = playerSprite.y + this._emoteMenuOffsetY;
 
-  const bg = this.add.image(0, 0, 'emoteMenu').setScale(0.8);
+  const bg = this.add.image(0, 0, 'emoteMenu').setScale(1);
   const container = this.add.container(menuX, menuY, [bg]).setDepth(100);
 
   const spacingX = 60;
@@ -1034,7 +1034,6 @@ export default class TownGameScene extends Phaser.Scene {
 
   const scaleFactor = MAX_EMOTE_SIZE / Math.max(frameWidth, frameHeight);
   emoteSprite.setScale(scaleFactor);
-  //---------------------------------------------
 
   const animKey = this._emoteAnimations[emoteID];
   emoteSprite.play(animKey);
