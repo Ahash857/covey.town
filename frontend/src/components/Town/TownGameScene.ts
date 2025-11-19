@@ -67,9 +67,12 @@ export default class TownGameScene extends Phaser.Scene {
   private _emoteMenuOffsetY = 110;
   private _activeEmotes: {
     sprite: Phaser.GameObjects.Sprite;
+    bubble: Phaser.GameObjects.Image;
     player: PlayerController;
     offsetX: number;
     offsetY: number;
+    emoteOffsetX: number;
+    emoteOffsetY: number;
   }[] = [];
 
 
@@ -153,6 +156,10 @@ export default class TownGameScene extends Phaser.Scene {
     this.load.image(
       'emoteMenu',
       this._resourcePathPrefix + '/assets/emotes/emote-menu.png',
+    );
+    this.load.image(
+      'emote-holder',
+      this._resourcePathPrefix + '/assets/emotes/emote-holder.png',
     );
     this.load.image(
       'Calling-static',
@@ -497,9 +504,13 @@ export default class TownGameScene extends Phaser.Scene {
         const centerX = body.x + body.width / 2;
         const centerY = body.y + body.height / 2;
 
+        const x = centerX + emote.offsetX;
+        const y = centerY + emote.offsetY;
+
+        emote.bubble.setPosition(x, y);
         emote.sprite.setPosition(
-          centerX + emote.offsetX,
-          centerY + emote.offsetY,
+          x + emote.emoteOffsetX,
+          y + emote.emoteOffsetY,
         );
       }
     }
@@ -1010,41 +1021,51 @@ export default class TownGameScene extends Phaser.Scene {
   }
 
   private showEmote = (playerID: string, emoteID: string) => {
-  const player = this.coveyTownController.getPlayer(playerID);
-  if (!player.gameObjects) return;
+    const player = this.coveyTownController.getPlayer(playerID);
+    if (!player.gameObjects) return;
 
-  const playerSprite = player.gameObjects.sprite;
-  const body = playerSprite.body as Phaser.Physics.Arcade.Body | undefined;
-  if (!body) return;
+    const playerSprite = player.gameObjects.sprite;
+    const body = playerSprite.body as Phaser.Physics.Arcade.Body | undefined;
+    if (!body) return;
 
-  const offsetX = 70;
-  const offsetY = -50;
+    const offsetX = 90;
+    const offsetY = -70;
 
-  const centerX = body.x + body.width / 2;
-  const centerY = body.y + body.height / 2;
+    const emoteOffsetX = 0;  
+    const emoteOffsetY = -10;
+    
+    const centerX = body.x + body.width / 2;
+    const centerY = body.y + body.height / 2;
 
-  const emoteSprite = this.add
-    .sprite(centerX + offsetX, centerY + offsetY, emoteID, 0)
-    .setDepth(50);
+    const bubble = this.add
+      .image(centerX + offsetX, centerY + offsetY, 'emote-holder')
+      .setDepth(49)
+      .setScale(0.5);
 
-  const MAX_EMOTE_SIZE = 100;
+    const emoteSprite = this.add
+      .sprite(centerX + offsetX + emoteOffsetX, centerY + offsetY + emoteOffsetY, emoteID, 0)
+      .setDepth(50);
 
-  const frameWidth = emoteSprite.width;
-  const frameHeight = emoteSprite.height;
+    const MAX_EMOTE_SIZE = 100;
 
-  const scaleFactor = MAX_EMOTE_SIZE / Math.max(frameWidth, frameHeight);
-  emoteSprite.setScale(scaleFactor);
+    const frameWidth = emoteSprite.width;
+    const frameHeight = emoteSprite.height;
 
-  const animKey = this._emoteAnimations[emoteID];
-  emoteSprite.play(animKey);
+    const scaleFactor = MAX_EMOTE_SIZE / Math.max(frameWidth, frameHeight);
+    emoteSprite.setScale(scaleFactor);
 
-  this._activeEmotes.push({ sprite: emoteSprite, player, offsetX, offsetY });
+    const animKey = this._emoteAnimations[emoteID];
+    emoteSprite.play(animKey);
 
-  emoteSprite.on('animationcomplete', () => {
-    emoteSprite.destroy();
-    this._activeEmotes = this._activeEmotes.filter(e => e.sprite !== emoteSprite);
-  });
-};
+    this._activeEmotes.push({ sprite: emoteSprite, bubble, player, offsetX, offsetY, emoteOffsetX, emoteOffsetY});
+
+    emoteSprite.on('animationcomplete', () => {
+      emoteSprite.destroy();
+      bubble.destroy();
+      this._activeEmotes = this._activeEmotes.filter(e => e.sprite !== emoteSprite);
+    });
+  };
+
 
   createPlayerSprites(player: PlayerController) {
     if (!player.gameObjects) {
