@@ -870,7 +870,7 @@ export default class TownGameScene extends Phaser.Scene {
       .setDepth(50)
       .setScale(0.35);
 
-    const animKey = this._emoteAnimations[emoteID] ?? 'mimimiAnim';
+    const animKey = this._emoteAnimations[emoteID];
     emoteSprite.play(animKey);
 
     this._activeEmotes.push({ sprite: emoteSprite, player, offsetX, offsetY });
