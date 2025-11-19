@@ -74,10 +74,6 @@ export default class TownGameScene extends Phaser.Scene {
 
 
   private _emoteAnimations: Record<string, string> = {
-    //TODO: add other emotes here
-    'mimimi-spritesheet': 'mimimiAnim',
-    'laugh-spritesheet' : 'laughAnim',
-    
     'Calling-spritesheet': 'CallingAnim',
     'CheckMark-spritesheet': 'CheckMarkAnim',
     'LaughingFace-spritesheet': 'LaughingFaceAnim',
@@ -203,27 +199,7 @@ export default class TownGameScene extends Phaser.Scene {
       this._resourcePathPrefix + '/assets/emotes/ThumbsUp-static.png',
     );
 
-
-    //REMOVE THIS (TESTING ONLY)
-    this.load.spritesheet(
-      'mimimi-spritesheet',
-      this._resourcePathPrefix + '/assets/emotes/spritesheets/mimimi.png',
-      {
-        frameWidth: 354,
-        frameHeight: 266,
-      },
-    );
-    this.load.spritesheet(
-      'laugh-spritesheet',
-      this._resourcePathPrefix + '/assets/emotes/spritesheets/laugh-spritesheet.png',
-      {
-        frameWidth: 480,
-        frameHeight: 480,
-      },
-    );
-    //REMOVE THIS (TESTING ONLY)
-
-    // Calling
+    // Emote Spritesheets
     this.load.spritesheet(
       'Calling-spritesheet',
       this._resourcePathPrefix + '/assets/emotes/spritesheets/Calling.png',
@@ -232,8 +208,6 @@ export default class TownGameScene extends Phaser.Scene {
         frameHeight: 200, 
       },
     );
-
-    // CheckMark
     this.load.spritesheet(
       'CheckMark-spritesheet',
       this._resourcePathPrefix + '/assets/emotes/spritesheets/CheckMark.png',
@@ -242,8 +216,6 @@ export default class TownGameScene extends Phaser.Scene {
         frameHeight: 800, 
       },
     );
-
-    // LaughingFace
     this.load.spritesheet(
       'LaughingFace-spritesheet',
       this._resourcePathPrefix + '/assets/emotes/spritesheets/LaughingFace.png',
@@ -252,8 +224,6 @@ export default class TownGameScene extends Phaser.Scene {
         frameHeight: 371, 
       },
     );
-
-    // LightBulb
     this.load.spritesheet(
       'LightBulb-spritesheet',
       this._resourcePathPrefix + '/assets/emotes/spritesheets/LightBulb.png',
@@ -262,8 +232,6 @@ export default class TownGameScene extends Phaser.Scene {
         frameHeight: 785, 
       },
     );
-
-    // MindBlown
     this.load.spritesheet(
       'MindBlown-spritesheet',
       this._resourcePathPrefix + '/assets/emotes/spritesheets/MindBlown.png',
@@ -272,8 +240,6 @@ export default class TownGameScene extends Phaser.Scene {
         frameHeight: 360, 
       },
     );
-
-    // PartyPopper
     this.load.spritesheet(
       'PartyPopper-spritesheet',
       this._resourcePathPrefix + '/assets/emotes/spritesheets/PartyPopper.png',
@@ -282,8 +248,6 @@ export default class TownGameScene extends Phaser.Scene {
         frameHeight: 850, 
       },
     );
-
-    // ThinkingFace
     this.load.spritesheet(
       'ThinkingFace-spritesheet',
       this._resourcePathPrefix + '/assets/emotes/spritesheets/ThinkingFace.png',
@@ -292,8 +256,6 @@ export default class TownGameScene extends Phaser.Scene {
         frameHeight: 360, 
       },
     );
-
-    // ThumbsUp
     this.load.spritesheet(
       'ThumbsUp-spritesheet',
       this._resourcePathPrefix + '/assets/emotes/spritesheets/ThumbsUp.png',
@@ -814,26 +776,8 @@ export default class TownGameScene extends Phaser.Scene {
       frameRate: 10,
       repeat: -1,
     });
-    this.anims.create({
-      key: 'mimimiAnim',
-      frames: this.anims.generateFrameNumbers('mimimi-spritesheet', {
-        start: 0,
-        end: 72,
-       }),
-       frameRate: 30, 
-       repeat: 0,
-    });
-    this.anims.create({
-      key: 'laughAnim',
-      frames: this.anims.generateFrameNumbers('laugh-spritesheet', {
-        start: 0,
-        end: 71,
-       }),
-       frameRate: 30, 
-       repeat: 0,
-    });
 
-    // Calling Animation
+    // Emote animations
     this.anims.create({
       key: 'CallingAnim',
       frames: this.anims.generateFrameNumbers('Calling-spritesheet', {
@@ -843,8 +787,6 @@ export default class TownGameScene extends Phaser.Scene {
       frameRate: 30,
       repeat: 0,
     });
-
-    // CheckMark Animation
     this.anims.create({
       key: 'CheckMarkAnim',
       frames: this.anims.generateFrameNumbers('CheckMark-spritesheet', {
@@ -854,8 +796,6 @@ export default class TownGameScene extends Phaser.Scene {
       frameRate: 10,
       repeat: 0,
     });
-
-    // LaughingFace Animation
     this.anims.create({
       key: 'LaughingFaceAnim',
       frames: this.anims.generateFrameNumbers('LaughingFace-spritesheet', {
@@ -865,8 +805,6 @@ export default class TownGameScene extends Phaser.Scene {
       frameRate: 15,
       repeat: 0,
     });
-
-    // LightBulb Animation
     this.anims.create({
       key: 'LightBulbAnim',
       frames: this.anims.generateFrameNumbers('LightBulb-spritesheet', {
@@ -876,8 +814,6 @@ export default class TownGameScene extends Phaser.Scene {
       frameRate: 20,
       repeat: 0,
     });
-
-    // MindBlown Animation
     this.anims.create({
       key: 'MindBlownAnim',
       frames: this.anims.generateFrameNumbers('MindBlown-spritesheet', {
@@ -887,8 +823,6 @@ export default class TownGameScene extends Phaser.Scene {
       frameRate: 15,
       repeat: 0,
     });
-
-    // PartyPopper Animation
     this.anims.create({
       key: 'PartyPopperAnim',
       frames: this.anims.generateFrameNumbers('PartyPopper-spritesheet', {
@@ -898,8 +832,6 @@ export default class TownGameScene extends Phaser.Scene {
       frameRate: 30,
       repeat: 0,
     });
-
-    // ThinkingFace Animation
     this.anims.create({
       key: 'ThinkingFaceAnim',
       frames: this.anims.generateFrameNumbers('ThinkingFace-spritesheet', {
@@ -909,8 +841,6 @@ export default class TownGameScene extends Phaser.Scene {
       frameRate: 15,
       repeat: 0,
     });
-
-    // ThumbsUp Animation
     this.anims.create({
       key: 'ThumbsUpAnim',
       frames: this.anims.generateFrameNumbers('ThumbsUp-spritesheet', {
