@@ -4,30 +4,10 @@ import { createPortal } from 'react-dom';
 import Image, { StaticImageData } from 'next/image';
 import findPng from '../../../../public/assets/buttons/find.png';
 import panelPng from '../../../../public/assets/buttons/findbackgroundPanel.png';
-import connectFour1 from '../../../../public/assets/buttons/connectFour1Btn.png';
 
 type Corner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
-function getPos(corner: Corner, offset: number) {
-  switch (corner) {
-    case 'top-left':
-      return { top: offset, left: offset };
-    case 'top-right':
-      return { top: offset, right: offset };
-    case 'bottom-left':
-      return { bottom: offset, left: offset };
-    default:
-      return { bottom: offset, right: offset };
-  }
-}
-
-const handleClick = () => {
-  // Implement the find action here.
-};
-
 export default function FindOverlayWithPanel({
-  corner = 'top-right',
-  offset = 16,
   btnSize = 128,
   panelMaxWidth = 700, // max width the panel can scale to
   panelPadding = 0, // optional inner padding around the image
@@ -55,7 +35,6 @@ export default function FindOverlayWithPanel({
   }, [open]);
 
   if (!mounted) return null; // render only on the client
-  const pos = getPos(corner, offset);
   return createPortal(
     <>
       {/* Fixed HUD button */}
@@ -71,7 +50,6 @@ export default function FindOverlayWithPanel({
           padding: 0,
           background: 'transparent',
           cursor: 'pointer',
-          ...pos,
           right: 270,
           top: 100,
         }}>
@@ -149,37 +127,4 @@ export default function FindOverlayWithPanel({
     </>,
     document.body,
   );
-
-  /*
-   const findBtn = (
-    <button
-      aria-label='Find'
-      onClick={handleClick}
-      style={{
-        position: 'fixed',
-        right: 250,
-        top: 16,
-        width: 140,
-        height: 140,
-        zIndex: 2147483647,
-        padding: 0,
-        borderRadius: 5,
-        border: 'none',
-        background: 'transparent',
-        cursor: 'pointer',
-      }}>
-      <Image
-        src={findPng}
-        alt=''
-        width={140}
-        height={140}
-        priority
-        sizes='256px'
-        style={{ imageRendering: 'pixelated', display: 'block' }}
-      />
-    </button>
-  );
-*/
-
-  // Used a portal to avoid any stacking
 }
