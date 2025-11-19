@@ -198,31 +198,31 @@ export default class TownGameScene extends Phaser.Scene {
       this._resourcePathPrefix + '/assets/emotes/spritesheets/Calling.png',
       {
         frameWidth: 200,
-        frameHeight: 200, 
+        frameHeight: 200,
       },
     );
     this.load.spritesheet(
       'CheckMark-spritesheet',
       this._resourcePathPrefix + '/assets/emotes/spritesheets/CheckMark.png',
       {
-        frameWidth: 800, 
-        frameHeight: 800, 
+        frameWidth: 800,
+        frameHeight: 800,
       },
     );
     this.load.spritesheet(
       'LaughingFace-spritesheet',
       this._resourcePathPrefix + '/assets/emotes/spritesheets/LaughingFace.png',
       {
-        frameWidth: 360, 
-        frameHeight: 371, 
+        frameWidth: 360,
+        frameHeight: 371,
       },
     );
     this.load.spritesheet(
       'LightBulb-spritesheet',
       this._resourcePathPrefix + '/assets/emotes/spritesheets/LightBulb.png',
       {
-        frameWidth: 800, 
-        frameHeight: 785, 
+        frameWidth: 800,
+        frameHeight: 785,
       },
     );
     this.load.spritesheet(
@@ -230,23 +230,23 @@ export default class TownGameScene extends Phaser.Scene {
       this._resourcePathPrefix + '/assets/emotes/spritesheets/MindBlown.png',
       {
         frameWidth: 400,
-        frameHeight: 360, 
+        frameHeight: 360,
       },
     );
     this.load.spritesheet(
       'PartyPopper-spritesheet',
       this._resourcePathPrefix + '/assets/emotes/spritesheets/PartyPopper.png',
       {
-        frameWidth: 800, 
-        frameHeight: 850, 
+        frameWidth: 800,
+        frameHeight: 850,
       },
     );
     this.load.spritesheet(
       'ThinkingFace-spritesheet',
       this._resourcePathPrefix + '/assets/emotes/spritesheets/ThinkingFace.png',
       {
-        frameWidth: 363, 
-        frameHeight: 360, 
+        frameWidth: 363,
+        frameHeight: 360,
       },
     );
     this.load.spritesheet(
@@ -254,7 +254,7 @@ export default class TownGameScene extends Phaser.Scene {
       this._resourcePathPrefix + '/assets/emotes/spritesheets/ThumbsUp.png',
       {
         frameWidth: 800,
-        frameHeight: 518, 
+        frameHeight: 518,
       },
     );
     this.load.tilemapTiledJSON('map', this._resourcePathPrefix + '/assets/tilemaps/indoors.json');
@@ -288,7 +288,7 @@ export default class TownGameScene extends Phaser.Scene {
         if (sprite && label) {
           sprite.destroy();
           label.destroy();
-          if(petSprite) { // Now petSprite is defined and can be destroyed
+          if (petSprite) { // Now petSprite is defined and can be destroyed
             petSprite.destroy();
           }
         }
@@ -405,7 +405,7 @@ export default class TownGameScene extends Phaser.Scene {
 
           // Start pet idle animation
           if (gameObjects.petSprite) {
-              gameObjects.petSprite.anims.play('cat-idle', true);
+            gameObjects.petSprite.anims.play('cat-idle', true);
           }
 
           break;
@@ -472,11 +472,11 @@ export default class TownGameScene extends Phaser.Scene {
 
             // Control animation based on player movement state
             if (!player.location.moving) {
-               player.gameObjects.petSprite.anims.play('cat-idle', true);
+              player.gameObjects.petSprite.anims.play('cat-idle', true);
             } else {
-               // Player is moving: Play the corresponding directional walk animation.
-               const petAnimKey = `cat-walk-${player.location.rotation}`;
-               player.gameObjects.petSprite.anims.play(petAnimKey, true);
+              // Player is moving: Play the corresponding directional walk animation.
+              const petAnimKey = `cat-walk-${player.location.rotation}`;
+              player.gameObjects.petSprite.anims.play(petAnimKey, true);
             }
           }
         }
@@ -780,7 +780,7 @@ export default class TownGameScene extends Phaser.Scene {
       key: 'CallingAnim',
       frames: this.anims.generateFrameNumbers('Calling-spritesheet', {
         start: 0,
-        end: 39, 
+        end: 39,
       }),
       frameRate: 30,
       repeat: 0,
@@ -789,7 +789,7 @@ export default class TownGameScene extends Phaser.Scene {
       key: 'CheckMarkAnim',
       frames: this.anims.generateFrameNumbers('CheckMark-spritesheet', {
         start: 0,
-        end: 11, 
+        end: 11,
       }),
       frameRate: 10,
       repeat: 0,
@@ -807,7 +807,7 @@ export default class TownGameScene extends Phaser.Scene {
       key: 'LightBulbAnim',
       frames: this.anims.generateFrameNumbers('LightBulb-spritesheet', {
         start: 0,
-        end: 40, 
+        end: 40,
       }),
       frameRate: 20,
       repeat: 0,
@@ -816,7 +816,7 @@ export default class TownGameScene extends Phaser.Scene {
       key: 'MindBlownAnim',
       frames: this.anims.generateFrameNumbers('MindBlown-spritesheet', {
         start: 0,
-        end: 31, 
+        end: 31,
       }),
       frameRate: 15,
       repeat: 0,
@@ -825,7 +825,7 @@ export default class TownGameScene extends Phaser.Scene {
       key: 'PartyPopperAnim',
       frames: this.anims.generateFrameNumbers('PartyPopper-spritesheet', {
         start: 0,
-        end: 62, 
+        end: 62,
       }),
       frameRate: 30,
       repeat: 0,
@@ -843,12 +843,12 @@ export default class TownGameScene extends Phaser.Scene {
       key: 'ThumbsUpAnim',
       frames: this.anims.generateFrameNumbers('ThumbsUp-spritesheet', {
         start: 0,
-        end: 19, 
+        end: 19,
       }),
       frameRate: 15,
       repeat: 0,
     });
-    
+
 
     const camera = this.cameras.main;
     camera.startFollow(this.coveyTownController.ourPlayer.gameObjects.sprite);
@@ -881,7 +881,7 @@ export default class TownGameScene extends Phaser.Scene {
     sinkOffset = 6,
     scaleMultiplier = 1.08,
   ) => {
-    
+
     const baseY = icon.y;
     const baseScaleX = icon.scaleX;
     const baseScaleY = icon.scaleY;
@@ -889,7 +889,7 @@ export default class TownGameScene extends Phaser.Scene {
     icon.on('pointerover', () => {
       this.tweens.add({
         targets: icon,
-        y: baseY + sinkOffset, 
+        y: baseY + sinkOffset,
         scaleX: baseScaleX * scaleMultiplier,
         scaleY: baseScaleY * scaleMultiplier,
         duration: 120,
@@ -900,7 +900,7 @@ export default class TownGameScene extends Phaser.Scene {
     icon.on('pointerout', () => {
       this.tweens.add({
         targets: icon,
-        y: baseY, 
+        y: baseY,
         scaleX: baseScaleX,
         scaleY: baseScaleY,
         duration: 120,
@@ -914,7 +914,7 @@ export default class TownGameScene extends Phaser.Scene {
       return;
     }
 
-    const now = this.time.now; 
+    const now = this.time.now;
     if (now - this._lastEmoteMenuOpenTime < this._emoteMenuCooldownMs) {
       return;
     }
@@ -932,80 +932,80 @@ export default class TownGameScene extends Phaser.Scene {
     { id: 'PartyPopper-spritesheet', icon: 'PartyPopper-static' },
     { id: 'ThinkingFace-spritesheet', icon: 'ThinkingFace-static' },
     { id: 'ThumbsUp-spritesheet', icon: 'ThumbsUp-static' },
-  
+
   ];
   private openEmoteMenu = () => {
-  this._isEmoteMenuOpen = true;
+    this._isEmoteMenuOpen = true;
 
-  const ourPlayer = this.coveyTownController.ourPlayer;
-  const playerSprite = ourPlayer.gameObjects?.sprite;
-  if (!playerSprite) {
-    return;
-  }
+    const ourPlayer = this.coveyTownController.ourPlayer;
+    const playerSprite = ourPlayer.gameObjects?.sprite;
+    if (!playerSprite) {
+      return;
+    }
 
-  const menuX = playerSprite.x + this._emoteMenuOffsetX;
-  const menuY = playerSprite.y + this._emoteMenuOffsetY;
+    const menuX = playerSprite.x + this._emoteMenuOffsetX;
+    const menuY = playerSprite.y + this._emoteMenuOffsetY;
 
-  const bg = this.add.image(0, 0, 'emoteMenu').setScale(1);
-  const container = this.add.container(menuX, menuY, [bg]).setDepth(100);
+    const bg = this.add.image(0, 0, 'emoteMenu').setScale(1);
+    const container = this.add.container(menuX, menuY, [bg]).setDepth(100);
 
-  const spacingX = 60;
-  const spacingY = 70;
-  const itemsPerRow = 4;
-  const totalRows = 2;
+    const spacingX = 60;
+    const spacingY = 70;
+    const itemsPerRow = 4;
+    const totalRows = 2;
 
-  //Maximum emote icon size
-  const TARGET_SIZE = 60; 
+    //Maximum emote icon size
+    const TARGET_SIZE = 60;
 
-  this._emoteList.forEach((emoteDef, index) => {
-    const row = Math.floor(index / itemsPerRow); 
-    const col = index % itemsPerRow;            
+    this._emoteList.forEach((emoteDef, index) => {
+      const row = Math.floor(index / itemsPerRow);
+      const col = index % itemsPerRow;
 
-    const rowWidth = (itemsPerRow - 1) * spacingX;
-    const startX = -rowWidth / 2;
+      const rowWidth = (itemsPerRow - 1) * spacingX;
+      const startX = -rowWidth / 2;
 
-    const totalHeight = (totalRows - 1) * spacingY;
-    const startY = -totalHeight / 2;
+      const totalHeight = (totalRows - 1) * spacingY;
+      const startY = -totalHeight / 2;
 
-    const x = startX + col * spacingX;
-    const y = startY + row * spacingY;
+      const x = startX + col * spacingX;
+      const y = startY + row * spacingY;
 
-    const icon = this.add.image(x, y, emoteDef.icon);
+      const icon = this.add.image(x, y, emoteDef.icon);
 
-    const width = icon.width;
-    const height = icon.height;
-    const scaleFactor = TARGET_SIZE / Math.max(width, height);
-    icon.setScale(scaleFactor);
+      const width = icon.width;
+      const height = icon.height;
+      const scaleFactor = TARGET_SIZE / Math.max(width, height);
+      icon.setScale(scaleFactor);
 
-    icon.setInteractive({ useHandCursor: true });
-    this.applyHoverEffect(icon);
+      icon.setInteractive({ useHandCursor: true });
+      this.applyHoverEffect(icon);
 
-    const baseY = y; 
+      const baseY = y;
 
-    icon.on('pointerout', () => {
-      this.tweens.add({
-        targets: icon,
-        y: baseY,         
-        scale: scaleFactor,
-        duration: 120,
-        ease: 'Quad.easeOut',
+      icon.on('pointerout', () => {
+        this.tweens.add({
+          targets: icon,
+          y: baseY,
+          scale: scaleFactor,
+          duration: 120,
+          ease: 'Quad.easeOut',
+        });
       });
+
+      icon.on('pointerup', () => {
+        this.handleEmoteSelection(emoteDef.id);
+      });
+
+      container.add(icon);
     });
 
-    icon.on('pointerup', () => {
-      this.handleEmoteSelection(emoteDef.id);
+    bg.setInteractive();
+    bg.on('pointerup', () => {
+      this.closeEmoteMenu();
     });
 
-    container.add(icon);
-  });
-
-  bg.setInteractive();
-  bg.on('pointerup', () => {
-    this.closeEmoteMenu();
-  });
-
-  this._emoteMenuContainer = container;
-};
+    this._emoteMenuContainer = container;
+  };
 
   private closeEmoteMenu = () => {
     this._isEmoteMenuOpen = false;
@@ -1031,9 +1031,9 @@ export default class TownGameScene extends Phaser.Scene {
     const offsetX = 90;
     const offsetY = -70;
 
-    const emoteOffsetX = 0;  
+    const emoteOffsetX = 0;
     const emoteOffsetY = -10;
-    
+
     const centerX = body.x + body.width / 2;
     const centerY = body.y + body.height / 2;
 
@@ -1057,7 +1057,7 @@ export default class TownGameScene extends Phaser.Scene {
     const animKey = this._emoteAnimations[emoteID];
     emoteSprite.play(animKey);
 
-    this._activeEmotes.push({ sprite: emoteSprite, bubble, player, offsetX, offsetY, emoteOffsetX, emoteOffsetY});
+    this._activeEmotes.push({ sprite: emoteSprite, bubble, player, offsetX, offsetY, emoteOffsetX, emoteOffsetY });
 
     emoteSprite.on('animationcomplete', () => {
       emoteSprite.destroy();
