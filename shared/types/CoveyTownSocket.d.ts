@@ -256,6 +256,13 @@ export type InteractableCommandResponse<MessageType> = {
   payload?: InteractableCommandResponseMap[MessageType];
 }
 
+// NEW Code: Defines the payload for the compass target event
+export interface CompassTarget {
+  destination: string;
+  x: number;
+  y: number;
+}
+
 export interface ServerToClientEvents {
   playerMoved: (movedPlayer: Player) => void;
   playerDisconnect: (disconnectedPlayer: Player) => void;
@@ -267,6 +274,7 @@ export interface ServerToClientEvents {
   interactableUpdate: (interactable: Interactable) => void;
   commandResponse: (response: InteractableCommandResponse) => void;
   onEmote: (data: EmoteData) => void;
+  compassTarget: (target: CompassTarget) => void; // NEW Code: Event for pet guidance target
 }
 
 export interface ClientToServerEvents {

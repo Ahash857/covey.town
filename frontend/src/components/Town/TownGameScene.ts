@@ -2,7 +2,7 @@ import assert from 'assert';
 import Phaser from 'phaser';
 import PlayerController, { MOVEMENT_SPEED } from '../../classes/PlayerController';
 import TownController from '../../classes/TownController';
-import { PlayerLocation } from '../../types/CoveyTownSocket';
+import { CompassTarget, PlayerLocation } from '../../types/CoveyTownSocket'; // NEW Code: Import CompassTarget
 import { Callback } from '../VideoCall/VideoFrontend/types';
 import Interactable from './Interactable';
 import ConversationArea from './interactables/ConversationArea';
@@ -64,15 +64,12 @@ export default class TownGameScene extends Phaser.Scene {
   private _emoteMenuCooldownMs = 5000; // 1 second between opens
   private _lastEmoteMenuOpenTime = 0;
   private _emoteMenuOffsetX = 190;
-  private _emoteMenuOffsetY = 110;
+  private _emoteMenuOffsetY = 120;
   private _activeEmotes: {
     sprite: Phaser.GameObjects.Sprite;
-    bubble: Phaser.GameObjects.Image;
     player: PlayerController;
     offsetX: number;
     offsetY: number;
-    emoteOffsetX: number;
-    emoteOffsetY: number;
   }[] = [];
 
 
@@ -98,6 +95,11 @@ export default class TownGameScene extends Phaser.Scene {
       this._onGameReadyListeners.push(resolve);
     }
   });
+
+  private _targetLocation?: { x: number; y: number }; // NEW Code: Target coordinates
+  private _autoMoving = false; // NEW Code: Auto-movement flag
+  private readonly STOPPING_DISTANCE = 16; // NEW Code: Stopping distance (16px)
+
 
   public get gameIsReady() {
     return this._gameIsReady;
@@ -157,10 +159,18 @@ export default class TownGameScene extends Phaser.Scene {
       'emoteMenu',
       this._resourcePathPrefix + '/assets/emotes/emote-menu.png',
     );
+
+    //REMOVE THIS (TESTING ONLY)
     this.load.image(
-      'emote-holder',
-      this._resourcePathPrefix + '/assets/emotes/emote-holder.png',
+      'mimimi-static',
+      this._resourcePathPrefix + '/assets/emotes/mimimi-static.png',
     );
+    this.load.image(
+      'laugh-static',
+      this._resourcePathPrefix + '/assets/emotes/laugh-static.png',
+    );
+    //REMOVE THIS (TESTING ONLY)
+
     this.load.image(
       'Calling-static',
       this._resourcePathPrefix + '/assets/emotes/Calling-static.png',
@@ -193,36 +203,38 @@ export default class TownGameScene extends Phaser.Scene {
       'ThumbsUp-static',
       this._resourcePathPrefix + '/assets/emotes/ThumbsUp-static.png',
     );
+
+    // Emote Spritesheets
     this.load.spritesheet(
       'Calling-spritesheet',
       this._resourcePathPrefix + '/assets/emotes/spritesheets/Calling.png',
       {
         frameWidth: 200,
-        frameHeight: 200,
+        frameHeight: 200, 
       },
     );
     this.load.spritesheet(
       'CheckMark-spritesheet',
       this._resourcePathPrefix + '/assets/emotes/spritesheets/CheckMark.png',
       {
-        frameWidth: 800,
-        frameHeight: 800,
+        frameWidth: 800, 
+        frameHeight: 800, 
       },
     );
     this.load.spritesheet(
       'LaughingFace-spritesheet',
       this._resourcePathPrefix + '/assets/emotes/spritesheets/LaughingFace.png',
       {
-        frameWidth: 360,
-        frameHeight: 371,
+        frameWidth: 360, 
+        frameHeight: 371, 
       },
     );
     this.load.spritesheet(
       'LightBulb-spritesheet',
       this._resourcePathPrefix + '/assets/emotes/spritesheets/LightBulb.png',
       {
-        frameWidth: 800,
-        frameHeight: 785,
+        frameWidth: 800, 
+        frameHeight: 785, 
       },
     );
     this.load.spritesheet(
@@ -230,23 +242,23 @@ export default class TownGameScene extends Phaser.Scene {
       this._resourcePathPrefix + '/assets/emotes/spritesheets/MindBlown.png',
       {
         frameWidth: 400,
-        frameHeight: 360,
+        frameHeight: 360, 
       },
     );
     this.load.spritesheet(
       'PartyPopper-spritesheet',
       this._resourcePathPrefix + '/assets/emotes/spritesheets/PartyPopper.png',
       {
-        frameWidth: 800,
-        frameHeight: 850,
+        frameWidth: 800, 
+        frameHeight: 850, 
       },
     );
     this.load.spritesheet(
       'ThinkingFace-spritesheet',
       this._resourcePathPrefix + '/assets/emotes/spritesheets/ThinkingFace.png',
       {
-        frameWidth: 363,
-        frameHeight: 360,
+        frameWidth: 363, 
+        frameHeight: 360, 
       },
     );
     this.load.spritesheet(
@@ -254,7 +266,7 @@ export default class TownGameScene extends Phaser.Scene {
       this._resourcePathPrefix + '/assets/emotes/spritesheets/ThumbsUp.png',
       {
         frameWidth: 800,
-        frameHeight: 518,
+        frameHeight: 518, 
       },
     );
     this.load.tilemapTiledJSON('map', this._resourcePathPrefix + '/assets/tilemaps/indoors.json');
@@ -288,7 +300,7 @@ export default class TownGameScene extends Phaser.Scene {
         if (sprite && label) {
           sprite.destroy();
           label.destroy();
-          if (petSprite) { // Now petSprite is defined and can be destroyed
+          if(petSprite) { // Now petSprite is defined and can be destroyed
             petSprite.destroy();
           }
         }
@@ -345,84 +357,128 @@ export default class TownGameScene extends Phaser.Scene {
     }
     const gameObjects = this.coveyTownController.ourPlayer.gameObjects;
     if (gameObjects && this._cursors) {
-      const prevVelocity = gameObjects.sprite.body.velocity.clone();
       const body = gameObjects.sprite.body as Phaser.Physics.Arcade.Body;
-
+      const prevVelocity = body.velocity.clone();
+      
       // Stop any previous movement from the last frame
       body.setVelocity(0);
 
-      const primaryDirection = this.getNewMovementDirection();
-      const isMoving = primaryDirection !== undefined;
+      let primaryDirection: 'left' | 'right' | 'front' | 'back' | undefined = undefined;
+      let isMoving = false;
 
-      switch (primaryDirection) {
-        case 'left':
-          body.setVelocityX(-MOVEMENT_SPEED);
-          gameObjects.sprite.anims.play('misa-left-walk', true);
+      // NEW Code: Automated guidance logic block
+      if (this._autoMoving && this._targetLocation) {
+        const targetX = this._targetLocation.x;
+        const targetY = this._targetLocation.y;
+        const currentX = body.x + body.width / 2;
+        const currentY = body.y + body.height / 2;
+        const dx = targetX - currentX;
+        const dy = targetY - currentY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
 
-          // Play the left walking animation
-          if (gameObjects.petSprite) {
-            gameObjects.petSprite.anims.play('cat-walk-left', true);
+        // NEW Code: Check if reached stopping distance
+        if (distance < this.STOPPING_DISTANCE) {
+          this.coveyTownController.stopCompassGuide(); // NEW Code: Stop guidance
+        } else {
+          isMoving = true;
+          
+          // NEW Code: Set velocity based on largest distance
+          if (Math.abs(dy) > Math.abs(dx)) {
+            if (dy < 0) {
+              body.setVelocityY(-MOVEMENT_SPEED);
+              primaryDirection = 'back';
+            } else {
+              body.setVelocityY(MOVEMENT_SPEED);
+              primaryDirection = 'front';
+            }
+          } else {
+            if (dx < 0) {
+              body.setVelocityX(-MOVEMENT_SPEED);
+              primaryDirection = 'left';
+            } else {
+              body.setVelocityX(MOVEMENT_SPEED);
+              primaryDirection = 'right';
+            }
           }
-          break;
-        case 'right':
-          body.setVelocityX(MOVEMENT_SPEED);
-          gameObjects.sprite.anims.play('misa-right-walk', true);
+        }
+      } 
+      
+      // NEW Code: Manual movement logic block (runs if NOT auto-moving)
+      if (!this._autoMoving) {
+        primaryDirection = this.getNewMovementDirection();
+        isMoving = primaryDirection !== undefined;
 
-          // Play the right walking animation
-          if (gameObjects.petSprite) {
-            gameObjects.petSprite.anims.play('cat-walk-right', true);
-          }
-          break;
-        case 'front':
-          body.setVelocityY(MOVEMENT_SPEED);
-          gameObjects.sprite.anims.play('misa-front-walk', true);
-
-          // Play the front walking animation
-          if (gameObjects.petSprite) {
-            gameObjects.petSprite.anims.play('cat-walk-front', true);
-          }
-          break;
-        case 'back':
-          body.setVelocityY(-MOVEMENT_SPEED);
-          gameObjects.sprite.anims.play('misa-back-walk', true);
-
-          // Play the back walking animation
-          if (gameObjects.petSprite) {
-            gameObjects.petSprite.anims.play('cat-walk-back', true);
-          }
-          break;
-        default:
-          // Not moving
-          gameObjects.sprite.anims.stop();
-          // If we were moving, pick and idle frame to use
-          if (prevVelocity.x < 0) {
-            gameObjects.sprite.setTexture('atlas', 'misa-left');
-          } else if (prevVelocity.x > 0) {
-            gameObjects.sprite.setTexture('atlas', 'misa-right');
-          } else if (prevVelocity.y < 0) {
-            gameObjects.sprite.setTexture('atlas', 'misa-back');
-          } else if (prevVelocity.y > 0) gameObjects.sprite.setTexture('atlas', 'misa-front');
-
-          // Start pet idle animation
-          if (gameObjects.petSprite) {
-            gameObjects.petSprite.anims.play('cat-idle', true);
-          }
-
-          break;
+        switch (primaryDirection) {
+          case 'left':
+            body.setVelocityX(-MOVEMENT_SPEED);
+            break;
+          case 'right':
+            body.setVelocityX(MOVEMENT_SPEED);
+            break;
+          case 'front':
+            body.setVelocityY(MOVEMENT_SPEED);
+            break;
+          case 'back':
+            body.setVelocityY(-MOVEMENT_SPEED);
+            break;
+          default:
+            // No manual input
+            break;
+        }
       }
 
       // Normalize and scale the velocity so that player can't move faster along a diagonal
-      gameObjects.sprite.body.velocity.normalize().scale(MOVEMENT_SPEED);
+      body.velocity.normalize().scale(MOVEMENT_SPEED);
 
+      // 3. ANIMATION LOGIC: Now uses the `isMoving` and `primaryDirection` from either manual or auto movement.
+      if (isMoving && primaryDirection) {
+        // Player animation logic
+        switch (primaryDirection) {
+            case 'left':
+                gameObjects.sprite.anims.play('misa-left-walk', true);
+                if (gameObjects.petSprite) gameObjects.petSprite.anims.play('cat-walk-left', true);
+                break;
+            case 'right':
+                gameObjects.sprite.anims.play('misa-right-walk', true);
+                if (gameObjects.petSprite) gameObjects.petSprite.anims.play('cat-walk-right', true);
+                break;
+            case 'front':
+                gameObjects.sprite.anims.play('misa-front-walk', true);
+                if (gameObjects.petSprite) gameObjects.petSprite.anims.play('cat-walk-front', true);
+                break;
+            case 'back':
+                gameObjects.sprite.anims.play('misa-back-walk', true);
+                if (gameObjects.petSprite) gameObjects.petSprite.anims.play('cat-walk-back', true);
+                break;
+        }
+      } else {
+        // Not moving (stopped manually or reached auto-target)
+        gameObjects.sprite.anims.stop();
+        // If we were moving, pick and idle frame to use
+        if (prevVelocity.x < 0) {
+          gameObjects.sprite.setTexture('atlas', 'misa-left');
+        } else if (prevVelocity.x > 0) {
+          gameObjects.sprite.setTexture('atlas', 'misa-right');
+        } else if (prevVelocity.y < 0) {
+          gameObjects.sprite.setTexture('atlas', 'misa-back');
+        } else if (prevVelocity.y > 0) gameObjects.sprite.setTexture('atlas', 'misa-front');
+
+        // Start pet idle animation
+        if (gameObjects.petSprite) {
+            gameObjects.petSprite.anims.play('cat-idle', true);
+        }
+      }
+
+      // Pet Position: Offset set to place the sprite lower-left of player
       if (gameObjects.petSprite) {
-        // Pet Position: Offset set to place the sprite lower-left of player
         gameObjects.petSprite.setX(gameObjects.sprite.getBounds().centerX - 25);
         gameObjects.petSprite.setY(gameObjects.sprite.getBounds().centerY + 15);
         gameObjects.petSprite.setVisible(gameObjects.sprite.visible);
-
       }
 
-      // const isMoving = primaryDirection !== undefined; // Re-use the existing `isMoving` variable
+      // We need to re-set the `isMoving` variable based on the final velocity to ensure `emitMovement` fires correctly.
+      isMoving = body.velocity.x !== 0 || body.velocity.y !== 0; 
+
       gameObjects.label.setX(body.x);
       gameObjects.label.setY(body.y - 20);
       const x = gameObjects.sprite.getBounds().centerX;
@@ -472,16 +528,16 @@ export default class TownGameScene extends Phaser.Scene {
 
             // Control animation based on player movement state
             if (!player.location.moving) {
-              player.gameObjects.petSprite.anims.play('cat-idle', true);
+               player.gameObjects.petSprite.anims.play('cat-idle', true);
             } else {
-              // Player is moving: Play the corresponding directional walk animation.
-              const petAnimKey = `cat-walk-${player.location.rotation}`;
-              player.gameObjects.petSprite.anims.play(petAnimKey, true);
+               // Player is moving: Play the corresponding directional walk animation.
+               const petAnimKey = `cat-walk-${player.location.rotation}`;
+               player.gameObjects.petSprite.anims.play(petAnimKey, true);
             }
           }
         }
       }
-      //Update emote menu location
+
       if (this._isEmoteMenuOpen && this._emoteMenuContainer) {
         const ourPlayer = this.coveyTownController.ourPlayer;
         const sprite = ourPlayer.gameObjects?.sprite;
@@ -493,7 +549,6 @@ export default class TownGameScene extends Phaser.Scene {
         }
       }
 
-      //update emote location
       for (const emote of this._activeEmotes) {
         const playerSprite = emote.player.gameObjects?.sprite;
         const body = playerSprite?.body as Phaser.Physics.Arcade.Body | undefined;
@@ -504,13 +559,9 @@ export default class TownGameScene extends Phaser.Scene {
         const centerX = body.x + body.width / 2;
         const centerY = body.y + body.height / 2;
 
-        const x = centerX + emote.offsetX;
-        const y = centerY + emote.offsetY;
-
-        emote.bubble.setPosition(x, y);
         emote.sprite.setPosition(
-          x + emote.emoteOffsetX,
-          y + emote.emoteOffsetY,
+          centerX + emote.offsetX,
+          centerY + emote.offsetY,
         );
       }
     }
@@ -631,6 +682,12 @@ export default class TownGameScene extends Phaser.Scene {
         false,
       ) as Phaser.Types.Input.Keyboard.CursorKeys,
     );
+    // Capture presses of the "E" key to trigger an emote.
+    // The server rebroadcasts the event to every client
+    const keyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+    keyE.on('down', () => {
+      this.coveyTownController.toggleEmoteMenu();
+    });
     // Listen for emote broadcasts from the TownController and display the effect
     // above the correct player's sprite.
     this.coveyTownController.addListener('emote', data => {
@@ -774,7 +831,7 @@ export default class TownGameScene extends Phaser.Scene {
       key: 'CallingAnim',
       frames: this.anims.generateFrameNumbers('Calling-spritesheet', {
         start: 0,
-        end: 39,
+        end: 39, 
       }),
       frameRate: 30,
       repeat: 0,
@@ -783,7 +840,7 @@ export default class TownGameScene extends Phaser.Scene {
       key: 'CheckMarkAnim',
       frames: this.anims.generateFrameNumbers('CheckMark-spritesheet', {
         start: 0,
-        end: 11,
+        end: 11, 
       }),
       frameRate: 10,
       repeat: 0,
@@ -801,7 +858,7 @@ export default class TownGameScene extends Phaser.Scene {
       key: 'LightBulbAnim',
       frames: this.anims.generateFrameNumbers('LightBulb-spritesheet', {
         start: 0,
-        end: 40,
+        end: 40, 
       }),
       frameRate: 20,
       repeat: 0,
@@ -810,7 +867,7 @@ export default class TownGameScene extends Phaser.Scene {
       key: 'MindBlownAnim',
       frames: this.anims.generateFrameNumbers('MindBlown-spritesheet', {
         start: 0,
-        end: 31,
+        end: 31, 
       }),
       frameRate: 15,
       repeat: 0,
@@ -819,7 +876,7 @@ export default class TownGameScene extends Phaser.Scene {
       key: 'PartyPopperAnim',
       frames: this.anims.generateFrameNumbers('PartyPopper-spritesheet', {
         start: 0,
-        end: 62,
+        end: 62, 
       }),
       frameRate: 30,
       repeat: 0,
@@ -837,12 +894,12 @@ export default class TownGameScene extends Phaser.Scene {
       key: 'ThumbsUpAnim',
       frames: this.anims.generateFrameNumbers('ThumbsUp-spritesheet', {
         start: 0,
-        end: 19,
+        end: 19, 
       }),
       frameRate: 15,
       repeat: 0,
     });
-
+    
 
     const camera = this.cameras.main;
     camera.startFollow(this.coveyTownController.ourPlayer.gameObjects.sprite);
@@ -868,6 +925,27 @@ export default class TownGameScene extends Phaser.Scene {
     this._onGameReadyListeners.forEach(listener => listener());
     this._onGameReadyListeners = [];
     this.coveyTownController.addListener('playersChanged', players => this.updatePlayers(players));
+    
+    // NEW Code: Register listener for compass target changes
+    this.coveyTownController.addListener('compassTargetChange', (target: CompassTarget | undefined) => {
+      if (target) {
+        // NEW Code: Target set: start auto-movement
+        this._targetLocation = target;
+        this._autoMoving = true;
+      } else {
+        // NEW Code: Target cleared: stop auto-movement
+        this._targetLocation = undefined;
+        this._autoMoving = false;
+        
+        // NEW Code: Ensure player stops movement when guide stops
+        const gameObjects = this.coveyTownController.ourPlayer.gameObjects;
+        if (gameObjects) {
+          (gameObjects.sprite.body as Phaser.Physics.Arcade.Body).setVelocity(0);
+          gameObjects.sprite.anims.stop();
+          if(gameObjects.petSprite) gameObjects.petSprite.anims.play('cat-idle', true);
+        }
+      }
+    });
   }
 
   private applyHoverEffect = (
@@ -875,7 +953,7 @@ export default class TownGameScene extends Phaser.Scene {
     sinkOffset = 6,
     scaleMultiplier = 1.08,
   ) => {
-
+    
     const baseY = icon.y;
     const baseScaleX = icon.scaleX;
     const baseScaleY = icon.scaleY;
@@ -883,7 +961,7 @@ export default class TownGameScene extends Phaser.Scene {
     icon.on('pointerover', () => {
       this.tweens.add({
         targets: icon,
-        y: baseY + sinkOffset,
+        y: baseY + sinkOffset, // "sink" down a bit
         scaleX: baseScaleX * scaleMultiplier,
         scaleY: baseScaleY * scaleMultiplier,
         duration: 120,
@@ -894,7 +972,7 @@ export default class TownGameScene extends Phaser.Scene {
     icon.on('pointerout', () => {
       this.tweens.add({
         targets: icon,
-        y: baseY,
+        y: baseY, // go back to original Y
         scaleX: baseScaleX,
         scaleY: baseScaleY,
         duration: 120,
@@ -908,7 +986,7 @@ export default class TownGameScene extends Phaser.Scene {
       return;
     }
 
-    const now = this.time.now;
+    const now = this.time.now; 
     if (now - this._lastEmoteMenuOpenTime < this._emoteMenuCooldownMs) {
       return;
     }
@@ -926,7 +1004,7 @@ export default class TownGameScene extends Phaser.Scene {
     { id: 'PartyPopper-spritesheet', icon: 'PartyPopper-static' },
     { id: 'ThinkingFace-spritesheet', icon: 'ThinkingFace-static' },
     { id: 'ThumbsUp-spritesheet', icon: 'ThumbsUp-static' },
-
+  
   ];
   private openEmoteMenu = () => {
     this._isEmoteMenuOpen = true;
@@ -940,46 +1018,37 @@ export default class TownGameScene extends Phaser.Scene {
     const menuX = playerSprite.x + this._emoteMenuOffsetX;
     const menuY = playerSprite.y + this._emoteMenuOffsetY;
 
-    const bg = this.add.image(0, 0, 'emoteMenu').setScale(1);
+    const bg = this.add.image(0, 0, 'emoteMenu').setScale(0.8);
+
     const container = this.add.container(menuX, menuY, [bg]).setDepth(100);
 
-    const spacingX = 60;
-    const spacingY = 70;
-    const itemsPerRow = 4;
-    const totalRows = 2;
+    const spacingX = 70;
+    const totalEmotes = this._emoteList.length;
+    const startX = -((totalEmotes - 1) * spacingX) / 2;
 
-    //Maximum emote icon size
+    // Maximum emote size
     const TARGET_SIZE = 60;
 
     this._emoteList.forEach((emoteDef, index) => {
-      const row = Math.floor(index / itemsPerRow);
-      const col = index % itemsPerRow;
+      const x = startX + index * spacingX;
 
-      const rowWidth = (itemsPerRow - 1) * spacingX;
-      const startX = -rowWidth / 2;
+      const icon = this.add.image(x, 0, emoteDef.icon)
 
-      const totalHeight = (totalRows - 1) * spacingY;
-      const startY = -totalHeight / 2;
-
-      const x = startX + col * spacingX;
-      const y = startY + row * spacingY;
-
-      const icon = this.add.image(x, y, emoteDef.icon);
-
+      //get the size of the image
       const width = icon.width;
       const height = icon.height;
+
+      // Calculate and set scale to fit within TARGET_SIZE
       const scaleFactor = TARGET_SIZE / Math.max(width, height);
       icon.setScale(scaleFactor);
 
       icon.setInteractive({ useHandCursor: true });
       this.applyHoverEffect(icon);
 
-      const baseY = y;
-
       icon.on('pointerout', () => {
         this.tweens.add({
           targets: icon,
-          y: baseY,
+          y: 0, 
           scale: scaleFactor,
           duration: 120,
           ease: 'Quad.easeOut',
@@ -999,7 +1068,7 @@ export default class TownGameScene extends Phaser.Scene {
     });
 
     this._emoteMenuContainer = container;
-  };
+  }
 
   private closeEmoteMenu = () => {
     this._isEmoteMenuOpen = false;
@@ -1022,43 +1091,29 @@ export default class TownGameScene extends Phaser.Scene {
     const body = playerSprite.body as Phaser.Physics.Arcade.Body | undefined;
     if (!body) return;
 
-    const offsetX = 90;
-    const offsetY = -70;
-
-    const emoteOffsetX = 0;
-    const emoteOffsetY = -10;
+    const offsetX = 70;
+    const offsetY = -50;
 
     const centerX = body.x + body.width / 2;
     const centerY = body.y + body.height / 2;
 
-    const bubble = this.add
-      .image(centerX + offsetX, centerY + offsetY, 'emote-holder')
-      .setDepth(49)
-      .setScale(0.5);
-
     const emoteSprite = this.add
-      .sprite(centerX + offsetX + emoteOffsetX, centerY + offsetY + emoteOffsetY, emoteID, 0)
-      .setDepth(50);
+      .sprite(centerX + offsetX, centerY + offsetY, emoteID, 0)
+      .setDepth(50)
+      .setScale(0.35);
 
-    const MAX_EMOTE_SIZE = 100;
-
-    const frameWidth = emoteSprite.width;
-    const frameHeight = emoteSprite.height;
-
-    const scaleFactor = MAX_EMOTE_SIZE / Math.max(frameWidth, frameHeight);
-    emoteSprite.setScale(scaleFactor);
-
-    const animKey = this._emoteAnimations[emoteID];
+    const animKey = this._emoteAnimations[emoteID] ?? 'mimimiAnim';
     emoteSprite.play(animKey);
 
-    this._activeEmotes.push({ sprite: emoteSprite, bubble, player, offsetX, offsetY, emoteOffsetX, emoteOffsetY });
+    this._activeEmotes.push({ sprite: emoteSprite, player, offsetX, offsetY });
 
     emoteSprite.on('animationcomplete', () => {
       emoteSprite.destroy();
-      bubble.destroy();
+      
       this._activeEmotes = this._activeEmotes.filter(e => e.sprite !== emoteSprite);
     });
-  };
+  }
+
 
 
   createPlayerSprites(player: PlayerController) {

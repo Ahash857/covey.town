@@ -95,6 +95,8 @@ export default class Town {
 
   private _chatMessages: ChatMessage[] = [];
 
+  private _namedObjectLocations: Map<string, { x: number; y: number }> = new Map(); // NEW Code: Map for destination lookup
+
   constructor(
     friendlyName: string,
     isPubliclyListed: boolean,
@@ -135,8 +137,48 @@ export default class Town {
       this._connectedSockets.delete(socket);
     });
 
+    const COMPASS_COMMAND_PREFIX = '/find '; // NEW Code: Define command prefix
+
     // Set up a listener to forward all chat messages to all clients in the town
     socket.on('chatMessage', (message: ChatMessage) => {
+
+      const isCompassCommand = message.body.toLowerCase().startsWith(COMPASS_COMMAND_PREFIX); // NEW Code: Check for /find command
+
+      if (isCompassCommand) { // NEW Code: Handle /find command
+        const destinationName = message.body.substring(COMPASS_COMMAND_PREFIX.length).trim().toLowerCase();
+        const target = this._namedObjectLocations.get(destinationName);
+
+        if (target) {
+          socket.emit('compassTarget', { // NEW Code: Emit private event back to client with coordinates
+            destination: destinationName,
+            x: target.x,
+            y: target.y,
+          });
+
+          const date = new Date(); 
+
+          this._broadcastEmitter.emit('chatMessage', {
+            author: 'System',
+            sid: `System-${date.getTime()}`,
+            body: `${userName} set their pet compass to '${destinationName}'.`,
+            dateCreated: date,
+            interactableID: message.interactableID,
+          });
+        } else {
+          const date = new Date(); 
+
+          socket.emit('chatMessage', {
+            author: 'System',
+            sid: `System-${date.getTime()}`,
+            body: `Error: Destination '${destinationName}' not found. Try 'Spawn Point' or another area name.`,
+            dateCreated: date,
+            interactableID: message.interactableID,
+          });
+        }
+        return; // NEW Code: Stop processing as regular chat message
+      }
+
+
       this._broadcastEmitter.emit('chatMessage', message);
       this._chatMessages.push(message);
       if (this._chatMessages.length > 200) {
@@ -296,11 +338,11 @@ export default class Town {
    * already have a topic set.
    *
    * If successful creating the conversation area, this method:
-   *  Adds any players who are in the region defined by the conversation area to it.
-   *  Notifies all players in the town that the conversation area has been updated
+   * Adds any players who are in the region defined by the conversation area to it.
+   * Notifies all players in the town that the conversation area has been updated
    *
    * @param conversationArea Information describing the conversation area to create. Ignores any
-   *  occupantsById that are set on the conversation area that is passed to this method.
+   * occupantsById that are set on the conversation area that is passed to this method.
    *
    * @returns true if the conversation is successfully created, or false if there is no known
    * conversation area with the specified ID or if there is already an active conversation area
@@ -326,9 +368,9 @@ export default class Town {
    * already have a video set.
    *
    * If successful creating the viewing area, this method:
-   *    Adds any players who are in the region defined by the viewing area to it
-   *    Notifies all players in the town that the viewing area has been updated by
-   *      emitting an interactableUpdate event
+   * Adds any players who are in the region defined by the viewing area to it
+   * Notifies all players in the town that the viewing area has been updated by
+   * emitting an interactableUpdate event
    *
    * @param viewingArea Information describing the viewing area to create.
    *
@@ -405,7 +447,7 @@ export default class Town {
    *
    * @param mapFile the map file to read in, defaults to the "indoors" map in the frontend
    * @throws Error if there is no layer named "Objects" in the map, if the objects overlap or if object
-   *  names are not unique
+   * names are not unique
    */
   public initializeFromMap(map: ITiledMap) {
     const objectLayer = map.layers.find(
@@ -434,6 +476,20 @@ export default class Town {
       .concat(viewingAreas)
       .concat(conversationAreas)
       .concat(gameAreas);
+
+    // NEW Code: Populate named object locations (for pet guide lookup)
+    objectLayer.objects.forEach(obj => {
+      if (obj.name) {
+        // Use the center of the object for guidance
+        this._namedObjectLocations.set(obj.name.toLowerCase(), {
+          x: obj.x + (obj.width || 0) / 2,
+          y: obj.y + (obj.height || 0) / 2,
+        });
+      }
+    });
+    // NEW Code: End object location population
+
+
     this._validateInteractables();
   }
 

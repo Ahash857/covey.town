@@ -5,6 +5,11 @@ import Image, { StaticImageData } from 'next/image';
 import findPng from '../../../../public/assets/buttons/find.png';
 import panelPng from '../../../../public/assets/buttons/findbackgroundPanel.png';
 
+// NEW Code: Import client hooks and types (paths must be verified locally)
+import useTownController from '../../../hooks/useTownController';
+import { useActiveInteractableAreas } from '../../../classes/TownController'; 
+import { GenericInteractableAreaController } from '../../../classes/interactable/InteractableAreaController';
+
 type Corner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
 export default function FindOverlayWithPanel({
@@ -23,6 +28,10 @@ export default function FindOverlayWithPanel({
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
 
+  // NEW Code: Hooks to access controller and destinations
+  const coveyTownController = useTownController();
+  const destinations = useActiveInteractableAreas(); 
+  
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
@@ -34,6 +43,15 @@ export default function FindOverlayWithPanel({
     return () => window.removeEventListener('keydown', onKey);
   }, [open]);
 
+  // NEW Code: Destination click handler
+  const handleDestinationClick = (area: GenericInteractableAreaController) => {
+    // 1. Tell the controller to start the guide using the area's friendly name.
+    coveyTownController.requestCompassGuide(area.friendlyName);
+    
+    // 2. Close the modal.
+    setOpen(false);
+  };
+  
   if (!mounted) return null; // render only on the client
   return createPortal(
     <>
@@ -104,6 +122,55 @@ export default function FindOverlayWithPanel({
                 display: 'block',
               }}
             />
+
+            {/* NEW Code: Destination List Container (Overlay) */}
+            <div style={{
+              position: 'absolute',
+              top: '15%', 
+              left: '10%',
+              width: '80%',
+              height: '75%',
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              background: 'rgba(20, 20, 20, 0.85)',
+              padding: '10px',
+              borderRadius: '4px',
+            }}>
+              <h3 style={{ color: '#E0E0E0', margin: '0 0 10px 0', paddingBottom: '5px', borderBottom: '1px solid #444' }}>
+                Active Areas
+              </h3>
+              
+              {/* NEW Code: Render Destination Buttons */}
+              {destinations.map(area => (
+                <button
+                  key={area.id}
+                  onClick={() => handleDestinationClick(area)} // NEW Code: Call handler on click
+                  style={{
+                    background: '#2F7C9C', 
+                    color: 'white',
+                    border: '1px solid #1A5473',
+                    padding: '8px 15px',
+                    margin: '4px 0',
+                    width: '100%',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    borderRadius: 4,
+                    transition: 'background 0.1s',
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#4A9BC4'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = '#2F7C9C'}
+                >
+                  🔍 {area.friendlyName}
+                </button>
+              ))}
+              
+              {destinations.length === 0 && (
+                <p style={{ color: '#FFD700' }}>No active areas found. Try creating a conversation or game.</p>
+              )}
+            </div>
+            {/* NEW Code: End Destination List Container */}
+
             {/* Optional close X in the corner */}
             <button
               aria-label='Close'
