@@ -15,6 +15,7 @@ import { TownsService, TownsServiceClient } from '../generated/client';
 import useTownController from '../hooks/useTownController';
 import {
   ChatMessage,
+  CompassTarget, // NEW Code: Import CompassTarget
   CoveyTownSocket,
   GameState,
   Interactable as InteractableAreaModel,
@@ -53,10 +54,7 @@ export type ConnectionProperties = {
   loginController: LoginController;
 };
 
-/**
- * The TownController emits these events. Components may subscribe to these events
- * by calling the `addListener` method on a TownController
- */
+// NEW Code: Updated TownEvents to include compassTargetChange
 export type TownEvents = {
   /**
    * An event that indicates that the TownController is now connected to the townService
@@ -116,6 +114,8 @@ export type TownEvents = {
    */
   emote: (data: { playerID: string; emoteID: string }) => void;
   toggleEmoteMenu: () => void;
+  /** NEW Code: Event for when the guidance target is set or cleared. */
+  compassTargetChange: (target: CompassTarget | undefined) => void; 
 };
 
 /**
@@ -147,6 +147,9 @@ export default class TownController extends (EventEmitter as new () => TypedEmit
    * and is also used to log out of a town.
    */
   private _loginController: LoginController;
+
+  /** NEW Code: The current target for pet guidance, if any. */
+  private _compassTarget: CompassTarget | undefined;
 
   /**
    * The current list of players in the town. Adding or removing players might replace the array
@@ -236,6 +239,7 @@ export default class TownController extends (EventEmitter as new () => TypedEmit
     this._socket = io(url, { auth: { userName, townID } });
     this._townsService = new TownsServiceClient({ BASE: url }).towns;
     this.registerSocketListeners();
+    this._compassTarget = undefined; // NEW Code: Initialize pet guide state
   }
 
   public get sessionToken() {
@@ -346,6 +350,33 @@ export default class TownController extends (EventEmitter as new () => TypedEmit
     return ret as GameAreaController<GameState, GameEventTypes>[];
   }
 
+  /** NEW Code: Getter for the current compass target. */
+  public get compassTarget(): CompassTarget | undefined {
+    return this._compassTarget;
+  }
+
+  /** NEW Code: Clears the automated guidance state (called by game scene or UI). */
+  public stopCompassGuide() {
+    if (this._compassTarget) {
+      this._compassTarget = undefined;
+      this.emit('compassTargetChange', undefined); // NEW Code: Notify listeners
+    }
+  }
+
+  /** NEW Code: Sends the /find command to the server to initiate guidance. */
+  public requestCompassGuide(destination: string) {
+      // NEW Code: Clear previous target immediately
+      this.stopCompassGuide(); 
+      
+      // NEW Code: Emit chat command to server
+      this.emitChatMessage({
+          author: this.userName,
+          sid: nanoid(), 
+          body: `/find ${destination}`,
+          dateCreated: new Date(),
+      });
+  }
+
   /**
    * Begin interacting with an interactable object. Emits an event to all listeners.
    * @param interactedObj
@@ -398,6 +429,13 @@ export default class TownController extends (EventEmitter as new () => TypedEmit
         this._townIsPubliclyListed = update.isPubliclyListed;
       }
     });
+
+    /** NEW Code: Socket listener for the private compass target event from the server. */
+    this._socket.on('compassTarget', (target: CompassTarget) => {
+      this._compassTarget = target;
+      this.emit('compassTargetChange', target); // NEW Code: Notify listeners
+    });
+    
     /**
    * When a player sends an emote, forward it to the controller's event listeners.
    * This allows the UI to react to emotes the same way it reacts to movement or chat,
@@ -731,7 +769,7 @@ export default class TownController extends (EventEmitter as new () => TypedEmit
   /**
    * Emit a viewing area update to the townService
    * @param viewingArea The Viewing Area Controller that is updated and should be emitted
-   *    with the event
+   * with the event
    */
   public emitViewingAreaUpdate(viewingArea: ViewingAreaController) {
     this._socket.emit('interactableUpdate', viewingArea.toInteractableAreaModel());
@@ -768,7 +806,7 @@ export default class TownController extends (EventEmitter as new () => TypedEmit
  *
  * This hook relies on the TownControllerContext.
  * @returns an object with the properties "friendlyName" and "isPubliclyListed",
- *  representing the current settings of the current town
+ * representing the current settings of the current town
  */
 export function useTownSettings() {
   const townController = useTownController();
