@@ -11,6 +11,8 @@ import ChatWindow from '../VideoCall/VideoFrontend/components/ChatWindow/ChatWin
 import clsx from 'clsx';
 import { createStyles, makeStyles, Theme } from '@material-ui/core';
 import FindOverlayButton from './interactables/FindOverlayButton';
+import findPng from '../../../public/assets/buttons/find.png';
+import Image, { StaticImageData } from 'next/image';
 
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -48,6 +50,25 @@ const useStyles = makeStyles((theme: Theme) =>
       pointerEvents: 'auto',
       right: '270px',
       transition: 'transform 0.15s ease, opacity 0.15s ease',
+      '&:hover': {
+        transform: 'translateY(-50%) scale(0.95)',
+      },
+      [theme.breakpoints.down('sm')]: {
+        right: '70px',
+      },
+    },
+    findButton: {
+      'position': 'fixed',
+      'zIndex': 900,
+      'width': 128,
+      'height': 128,
+      'transform': 'translateY(-50%)',
+      'border': 'none',
+      'pointerEvents': 'auto',
+      'cursor': 'pointer',
+      'right': '270px',
+      'top': '18%',
+      'transition': 'transform 0.15s ease, opacity 0.15s ease',
       '&:hover': {
         transform: 'translateY(-50%) scale(0.95)',
       },
@@ -120,22 +141,30 @@ export default function TownMap(): JSX.Element {
       </aside>
 
       <div id='map-container' />
-     <div
-      className={classes.emoteBubble}
-      onClick={handleEmoteClick}
-      style={{ opacity: isCoolingDown ? 0.5 : 1, pointerEvents: isCoolingDown ? 'none' : 'auto' }}
-    >
+      <div
+        className={classes.emoteBubble}
+        onClick={handleEmoteClick}
+        style={{ opacity: isCoolingDown ? 0.5 : 1, pointerEvents: isCoolingDown ? 'none' : 'auto' }}>
         <img
-          src='/assets/emotes/emote-bubble.png' 
+          src='/assets/emotes/emote-bubble.png'
           alt='Open emote menu'
           className={classes.emoteImage}
         />
       </div>
+
+      <div className={classes.findButton}>
+        <Image
+          src={findPng}
+          alt='Find'
+          width={128}
+          height={128}
+          sizes={`128px`}
+          style={{ imageRendering: 'pixelated', display: 'block' }}
+        />
+      </div>
+
       <div id='social-container'>
         <SocialSidebar />
-      </div>
-      <div id='petFindButton'>
-        <FindOverlayButton />
       </div>
     </div>
   );
