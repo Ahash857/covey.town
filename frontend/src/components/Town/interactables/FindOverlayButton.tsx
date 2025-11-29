@@ -4,8 +4,34 @@ import { createPortal } from 'react-dom';
 import Image, { StaticImageData } from 'next/image';
 import findPng from '../../../../public/assets/buttons/find.png';
 import panelPng from '../../../../public/assets/buttons/findbackgroundPanel.png';
+import { createStyles, makeStyles, Theme } from '@material-ui/core';
 
 type Corner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+
+
+const useStyles = makeStyles((theme: Theme) =>
+  createStyles({
+    findButton: {
+      'position': 'fixed',
+      'zIndex': 900,
+      'width': 128,
+      'height': 128,
+      'transform': 'translateY(-50%)',
+      'border': 'none',
+      'pointerEvents': 'auto',
+      'cursor': 'pointer',
+      'right': '270px',
+      'top': '18%',
+      'transition': 'transform 0.15s ease, opacity 0.15s ease',
+      '&:hover': {
+        transform: 'translateY(-50%) scale(0.95)',
+      },
+      [theme.breakpoints.down('sm')]: {
+        right: '70px',
+      },
+    },
+  }),
+);
 
 export default function FindOverlayWithPanel({
   btnSize = 128,
@@ -23,6 +49,8 @@ export default function FindOverlayWithPanel({
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
 
+  const classes = useStyles();
+
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
@@ -38,27 +66,12 @@ export default function FindOverlayWithPanel({
   return createPortal(
     <>
       {/* Fixed HUD button */}
-      <button
-        aria-label='Open Find Panel'
-        onClick={() => setOpen(true)}
-        style={{
-          position: 'fixed',
-          zIndex: 2147483647,
-          width: btnSize,
-          height: btnSize,
-          border: 'none',
-          padding: 0,
-          background: 'transparent',
-          cursor: 'pointer',
-          right: 270,
-          top: 100,
-        }}>
+      <button className={classes.findButton} onClick={() => setOpen(true)}>
         <Image
           src={findPng}
           alt='Find'
           width={btnSize}
           height={btnSize}
-          priority
           sizes={`${btnSize}px`}
           style={{ imageRendering: 'pixelated', display: 'block' }}
         />
