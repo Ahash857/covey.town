@@ -5,9 +5,22 @@ import Image, { StaticImageData } from 'next/image';
 import findPng from '../../../../public/assets/buttons/find.png';
 import panelPng from '../../../../public/assets/buttons/findbackgroundPanel.png';
 import { createStyles, makeStyles, Theme } from '@material-ui/core';
+import {
+  Button,
+  FormControl,
+  FormLabel,
+  Input,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  useToast,
+} from '@chakra-ui/react';
 
 type Corner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
-
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -49,6 +62,9 @@ export default function FindOverlayWithPanel({
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
 
+  const closeModal = () => {
+    setOpen(false);
+  };
   const classes = useStyles();
 
   useEffect(() => setMounted(true), []);
@@ -77,66 +93,17 @@ export default function FindOverlayWithPanel({
         />
       </button>
 
-      {/* Centered modal panel */}
-      {open && (
-        <div
-          role='dialog'
-          aria-modal='true'
-          onClick={() => setOpen(false)} // click backdrop closes
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 2147483646,
-            background: 'rgba(0,0,0,0.5)', // dim backdrop
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-          {/* Stop propagation so clicks on the panel don't close it */}
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              position: 'relative',
-              width: 'min(90vw, ' + panelMaxWidth + 'px)',
-              // Keep original aspect ratio if we have a StaticImageData import
-              // Fallback to a safe ratio if a string path was provided
-              aspectRatio:
-                typeof panelSrc === 'object'
-                  ? `${(panelSrc as StaticImageData).width}/${(panelSrc as StaticImageData).height}`
-                  : '16/9',
-              padding: panelPadding,
-            }}>
-            <Image
-              src={panelSrc}
-              alt='Find panel'
-              priority
-              sizes={`(max-width: ${panelMaxWidth}px) 90vw, ${panelMaxWidth}px`}
-              style={{
-                imageRendering: 'pixelated',
-                objectFit: 'contain', // show whole panel art centered
-                display: 'block',
-              }}
-            />
-            {/* Optional close X in the corner */}
-            <button
-              aria-label='Close'
-              onClick={() => setOpen(false)}
-              style={{
-                position: 'absolute',
-                top: 8,
-                right: 8,
-                background: 'rgba(0,0,0,0.6)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 6,
-                padding: '4px 8px',
-                cursor: 'pointer',
-              }}>
-              ✕
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Fixed Modal Panel */}
+      <Modal isOpen={open} onClose={closeModal}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader> Find Destination </ModalHeader>
+          <ModalCloseButton />
+          <ModalFooter>
+            <Button onClick={closeModal}>Cancel</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </>,
     document.body,
   );
