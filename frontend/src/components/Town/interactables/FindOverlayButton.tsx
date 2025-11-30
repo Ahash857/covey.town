@@ -3,10 +3,10 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Image, { StaticImageData } from 'next/image';
 import findPng from '../../../../public/assets/buttons/find.png';
-import panelPng from '../../../../public/assets/buttons/findbackgroundPanel.png';
 import { createStyles, makeStyles, Theme } from '@material-ui/core';
 import {
   Button,
+  Box,
   FormControl,
   FormLabel,
   Input,
@@ -18,6 +18,7 @@ import {
   ModalHeader,
   ModalOverlay,
   useToast,
+  VStack,
 } from '@chakra-ui/react';
 
 type Corner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
@@ -48,9 +49,6 @@ const useStyles = makeStyles((theme: Theme) =>
 
 export default function FindOverlayWithPanel({
   btnSize = 128,
-  panelMaxWidth = 700, // max width the panel can scale to
-  panelPadding = 0, // optional inner padding around the image
-  panelSrc = panelPng, // allow override, default to local import
 }: {
   corner?: Corner;
   offset?: number;
@@ -98,6 +96,22 @@ export default function FindOverlayWithPanel({
         <ModalOverlay />
         <ModalContent>
           <ModalHeader> Find Destination </ModalHeader>
+          <Box maxH='300px' overflowY='auto'>
+            <VStack align='stretch' spacing={2}>
+              <Button>Basement Dining Table 1</Button>
+              <Button>TicTacToe 1</Button>
+              <Button>TicTacToe 2</Button>
+              <Button>Connect Four 1</Button>
+              <Button>Connect Four 2</Button>
+              <Button>Foyer Table 1</Button>
+              <Button>Foyer Table 2</Button>
+              <Button>Foyer Table 3</Button>
+              <Button>Foyer Table 4</Button>
+              <Button>Foyer Table 5</Button>
+              <Button>Foyer Table 6</Button>
+              <Button>Foyer Table 7</Button>
+            </VStack>
+          </Box>
           <ModalCloseButton />
           <ModalFooter>
             <Button onClick={closeModal}>Cancel</Button>
