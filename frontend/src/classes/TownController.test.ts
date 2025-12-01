@@ -343,6 +343,37 @@ describe('TownController', () => {
           expect(occupantsChangeListener).not.toBeCalled();
         });
       });
+      describe('Emote Updates', () => {
+        it('Emits an emote event when the socket receives an onEmote message', () => {
+          const emoteData = { playerID: townJoinResponse.userID, emoteID: 'laughingFace' };
+
+          // Set up the listener on the TownController
+          const emoteListener = jest.fn();
+          testController.addListener('emote', emoteListener);
+
+          // Simulate the socket receiving the 'onEmote' event
+          const socketHandler = getEventListener(mockSocket, 'onEmote');
+          
+          socketHandler(emoteData);
+          expect(emoteListener).toHaveBeenCalledWith(emoteData);
+        });
+        it('emits the playerEmote event to the socket with the correct payload', () => {
+          const emoteID = 'heart';
+          testController.emitEmote(emoteID);
+
+          expect(mockSocket.emit).toHaveBeenCalledWith('playerEmote', {
+            playerID: testController.ourPlayer.id, 
+            emoteID: emoteID,
+          });
+        });
+        it('throws an error if emitEmote is called without a current player', () => {
+
+          (testController as any)._ourPlayer = undefined;
+          expect(() => {
+            testController.emitEmote('heart');
+          }).toThrow();
+        });
+      });
       describe('Viewing Area updates', () => {
         function viewingAreaOnTown() {
           return {

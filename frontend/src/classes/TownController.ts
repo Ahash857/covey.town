@@ -16,6 +16,7 @@ import useTownController from '../hooks/useTownController';
 import {
   ChatMessage,
   CoveyTownSocket,
+  EmoteData,
   GameState,
   Interactable as InteractableAreaModel,
   InteractableCommand,
@@ -114,7 +115,7 @@ export type TownEvents = {
    * This is broadcast to every client so emotes stay purely client-side visual effects
    * and do not require server-side storage or state.
    */
-  emote: (data: { playerID: string; emoteID: string }) => void;
+  emote: (data: EmoteData) => void;
   toggleEmoteMenu: () => void;
 };
 
