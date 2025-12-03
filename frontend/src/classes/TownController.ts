@@ -109,7 +109,7 @@ export type TownEvents = {
    * @param obj the interactable that is being interacted with
    */
   interact: <T extends Interactable>(typeName: T['name'], obj: T) => void;
-   /**
+  /**
    * An event that indicates that a player triggered an emote.
    * This is broadcast to every client so emotes stay purely client-side visual effects
    * and do not require server-side storage or state.
@@ -399,10 +399,10 @@ export default class TownController extends (EventEmitter as new () => TypedEmit
       }
     });
     /**
-   * When a player sends an emote, forward it to the controller's event listeners.
-   * This allows the UI to react to emotes the same way it reacts to movement or chat,
-   * without needing direct access to socket events.
-   */
+     * When a player sends an emote, forward it to the controller's event listeners.
+     * This allows the UI to react to emotes the same way it reacts to movement or chat,
+     * without needing direct access to socket events.
+     */
     this._socket.on('onEmote', data => {
       this.emit('emote', data);
     });
@@ -551,12 +551,12 @@ export default class TownController extends (EventEmitter as new () => TypedEmit
   }
 
   /**
- * Emit an emote event to the server so it can be rebroadcast to other players.
- * We include our own player ID so clients can associate the emote with the correct character,
- * allowing the frontend to show the effect without any direct player-to-player communication.
- *
- * @param emoteID The emote that the local player is triggering
- */
+   * Emit an emote event to the server so it can be rebroadcast to other players.
+   * We include our own player ID so clients can associate the emote with the correct character,
+   * allowing the frontend to show the effect without any direct player-to-player communication.
+   *
+   * @param emoteID The emote that the local player is triggering
+   */
   public emitEmote(emoteID: string) {
     const ourPlayer = this._ourPlayer;
     assert(ourPlayer);
@@ -568,7 +568,8 @@ export default class TownController extends (EventEmitter as new () => TypedEmit
 
   public toggleEmoteMenu = () => {
     this.emit('toggleEmoteMenu');
-  }
+  };
+
   /**
    * Update the settings of the current town. Sends the request to update the settings to the townService,
    * and does not update the local model. If the update is successful, then the townService will inform us

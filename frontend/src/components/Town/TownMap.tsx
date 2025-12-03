@@ -12,7 +12,6 @@ import clsx from 'clsx';
 import { createStyles, makeStyles, Theme } from '@material-ui/core';
 import FindOverlayButton from './interactables/FindOverlayButton';
 
-
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     chatWindowContainer: {
@@ -40,14 +39,14 @@ const useStyles = makeStyles((theme: Theme) =>
       display: 'none',
     },
     emoteBubble: {
-      position: 'fixed',
-      top: '10%',
-      transform: 'translateY(-50%)',
-      zIndex: 900,
-      cursor: 'pointer',
-      pointerEvents: 'auto',
-      right: '270px',
-      transition: 'transform 0.15s ease, opacity 0.15s ease',
+      'position': 'fixed',
+      'top': '10%',
+      'transform': 'translateY(-50%)',
+      'zIndex': 900,
+      'cursor': 'pointer',
+      'pointerEvents': 'auto',
+      'right': '270px',
+      'transition': 'transform 0.15s ease, opacity 0.15s ease',
       '&:hover': {
         transform: 'translateY(-50%) scale(0.95)',
       },
@@ -120,13 +119,15 @@ export default function TownMap(): JSX.Element {
       </aside>
 
       <div id='map-container' />
-     <div
-      className={classes.emoteBubble}
-      onClick={handleEmoteClick}
-      style={{ opacity: isCoolingDown ? 0.5 : 1, pointerEvents: isCoolingDown ? 'none' : 'auto' }}
-    >
+      <div
+        className={classes.emoteBubble}
+        onClick={handleEmoteClick}
+        style={{
+          opacity: isCoolingDown ? 0.5 : 1,
+          pointerEvents: isCoolingDown ? 'none' : 'auto',
+        }}>
         <img
-          src='/assets/emotes/emote-bubble.png' 
+          src='assets/emotes/emote-bubble.png'
           alt='Open emote menu'
           className={classes.emoteImage}
         />
