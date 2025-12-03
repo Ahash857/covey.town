@@ -151,18 +151,7 @@ export default function TownMap(): JSX.Element {
           className={classes.emoteImage}
         />
       </div>
-
-      <div className={classes.findButton}>
-        <Image
-          src={findPng}
-          alt='Find'
-          width={128}
-          height={128}
-          sizes={`128px`}
-          style={{ imageRendering: 'pixelated', display: 'block' }}
-        />
-      </div>
-
+      <FindOverlayButton />
       <div id='social-container'>
         <SocialSidebar />
       </div>
