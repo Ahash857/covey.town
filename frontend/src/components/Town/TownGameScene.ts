@@ -949,7 +949,7 @@ export default class TownGameScene extends Phaser.Scene {
     const totalRows = 2;
 
     //Maximum emote icon size
-    const TARGET_SIZE = 60;
+    const targetSize = 60;
 
     this._emoteList.forEach((emoteDef, index) => {
       const row = Math.floor(index / itemsPerRow);
@@ -968,7 +968,7 @@ export default class TownGameScene extends Phaser.Scene {
 
       const width = icon.width;
       const height = icon.height;
-      const scaleFactor = TARGET_SIZE / Math.max(width, height);
+      const scaleFactor = targetSize / Math.max(width, height);
       icon.setScale(scaleFactor);
 
       icon.setInteractive({ useHandCursor: true });
