@@ -59,12 +59,19 @@ export default class TownGameScene extends Phaser.Scene {
   public coveyTownController: TownController;
 
   private _onGameReadyListeners: Callback[] = [];
+
   private _emoteMenuContainer?: Phaser.GameObjects.Container;
+
   private _isEmoteMenuOpen = false;
+
   private _emoteMenuCooldownMs = 5000; // 1 second between opens
+
   private _lastEmoteMenuOpenTime = 0;
+
   private _emoteMenuOffsetX = 190;
+
   private _emoteMenuOffsetY = 110;
+
   private _activeEmotes: {
     sprite: Phaser.GameObjects.Sprite;
     bubble: Phaser.GameObjects.Image;
@@ -74,7 +81,6 @@ export default class TownGameScene extends Phaser.Scene {
     emoteOffsetX: number;
     emoteOffsetY: number;
   }[] = [];
-
 
   private _emoteAnimations: Record<string, string> = {
     'Calling-spritesheet': 'CallingAnim',
@@ -89,6 +95,7 @@ export default class TownGameScene extends Phaser.Scene {
   /**
    * Layers that the player can collide with.
    */
+
   private _collidingLayers: Phaser.Tilemaps.TilemapLayer[] = [];
 
   private _gameIsReady = new Promise<void>(resolve => {
@@ -153,14 +160,8 @@ export default class TownGameScene extends Phaser.Scene {
       '16_Grocery_store_32x32',
       this._resourcePathPrefix + '/assets/tilesets/16_Grocery_store_32x32.png',
     );
-    this.load.image(
-      'emoteMenu',
-      this._resourcePathPrefix + '/assets/emotes/emote-menu.png',
-    );
-    this.load.image(
-      'emote-holder',
-      this._resourcePathPrefix + '/assets/emotes/emote-holder.png',
-    );
+    this.load.image('emoteMenu', this._resourcePathPrefix + '/assets/emotes/emote-menu.png');
+    this.load.image('emote-holder', this._resourcePathPrefix + '/assets/emotes/emote-holder.png');
     this.load.image(
       'Calling-static',
       this._resourcePathPrefix + '/assets/emotes/Calling-static.png',
@@ -288,7 +289,8 @@ export default class TownGameScene extends Phaser.Scene {
         if (sprite && label) {
           sprite.destroy();
           label.destroy();
-          if (petSprite) { // Now petSprite is defined and can be destroyed
+          if (petSprite) {
+            // Now petSprite is defined and can be destroyed
             petSprite.destroy();
           }
         }
@@ -419,7 +421,6 @@ export default class TownGameScene extends Phaser.Scene {
         gameObjects.petSprite.setX(gameObjects.sprite.getBounds().centerX - 25);
         gameObjects.petSprite.setY(gameObjects.sprite.getBounds().centerY + 15);
         gameObjects.petSprite.setVisible(gameObjects.sprite.visible);
-
       }
 
       // const isMoving = primaryDirection !== undefined; // Re-use the existing `isMoving` variable
@@ -508,10 +509,7 @@ export default class TownGameScene extends Phaser.Scene {
         const y = centerY + emote.offsetY;
 
         emote.bubble.setPosition(x, y);
-        emote.sprite.setPosition(
-          x + emote.emoteOffsetX,
-          y + emote.emoteOffsetY,
-        );
+        emote.sprite.setPosition(x + emote.emoteOffsetX, y + emote.emoteOffsetY);
       }
     }
   }
@@ -656,7 +654,6 @@ export default class TownGameScene extends Phaser.Scene {
       .setDepth(6)
       .play('cat-idle');
 
-
     const label = this.add
       .text(spawnPoint.x, spawnPoint.y - 20, '(You)', {
         font: '18px monospace',
@@ -722,7 +719,6 @@ export default class TownGameScene extends Phaser.Scene {
       frameRate: 10,
       repeat: -1,
     });
-
 
     anims.create({
       key: 'misa-left-walk',
@@ -843,7 +839,6 @@ export default class TownGameScene extends Phaser.Scene {
       repeat: 0,
     });
 
-
     const camera = this.cameras.main;
     camera.startFollow(this.coveyTownController.ourPlayer.gameObjects.sprite);
     camera.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
@@ -875,7 +870,6 @@ export default class TownGameScene extends Phaser.Scene {
     sinkOffset = 6,
     scaleMultiplier = 1.08,
   ) => {
-
     const baseY = icon.y;
     const baseScaleX = icon.scaleX;
     const baseScaleY = icon.scaleY;
@@ -902,6 +896,7 @@ export default class TownGameScene extends Phaser.Scene {
       });
     });
   }
+
   private toggleEmoteMenu = () => {
     if (this._isEmoteMenuOpen) {
       this.closeEmoteMenu();
@@ -915,7 +910,7 @@ export default class TownGameScene extends Phaser.Scene {
 
     this._lastEmoteMenuOpenTime = now;
     this.openEmoteMenu();
-  }
+  };
 
   private _emoteList = [
     { id: 'Calling-spritesheet', icon: 'Calling-static' },
@@ -928,6 +923,7 @@ export default class TownGameScene extends Phaser.Scene {
     { id: 'ThumbsUp-spritesheet', icon: 'ThumbsUp-static' },
 
   ];
+
   private openEmoteMenu = () => {
     this._isEmoteMenuOpen = true;
 
@@ -1051,7 +1047,15 @@ export default class TownGameScene extends Phaser.Scene {
     const animKey = this._emoteAnimations[emoteID];
     emoteSprite.play(animKey);
 
-    this._activeEmotes.push({ sprite: emoteSprite, bubble, player, offsetX, offsetY, emoteOffsetX, emoteOffsetY });
+    this._activeEmotes.push({
+      sprite: emoteSprite,
+      bubble,
+      player,
+      offsetX,
+      offsetY,
+      emoteOffsetX,
+      emoteOffsetY,
+    });
 
     emoteSprite.on('animationcomplete', () => {
       emoteSprite.destroy();
@@ -1059,7 +1063,6 @@ export default class TownGameScene extends Phaser.Scene {
       this._activeEmotes = this._activeEmotes.filter(e => e.sprite !== emoteSprite);
     });
   };
-
 
   createPlayerSprites(player: PlayerController) {
     if (!player.gameObjects) {
