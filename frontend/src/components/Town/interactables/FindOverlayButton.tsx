@@ -7,17 +7,12 @@ import { createStyles, makeStyles, Theme } from '@material-ui/core';
 import {
   Button,
   Box,
-  FormControl,
-  FormLabel,
-  Input,
   Modal,
-  ModalBody,
   ModalCloseButton,
   ModalContent,
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-  useToast,
   VStack,
 } from '@chakra-ui/react';
 

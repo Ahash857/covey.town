@@ -11,9 +11,6 @@ import ChatWindow from '../VideoCall/VideoFrontend/components/ChatWindow/ChatWin
 import clsx from 'clsx';
 import { createStyles, makeStyles, Theme } from '@material-ui/core';
 import FindOverlayButton from './interactables/FindOverlayButton';
-import findPng from '../../../public/assets/buttons/find.png';
-import Image, { StaticImageData } from 'next/image';
-
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
