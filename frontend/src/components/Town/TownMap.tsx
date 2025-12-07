@@ -54,25 +54,6 @@ const useStyles = makeStyles((theme: Theme) =>
         right: '70px',
       },
     },
-    findButton: {
-      'position': 'fixed',
-      'zIndex': 900,
-      'width': 128,
-      'height': 128,
-      'transform': 'translateY(-50%)',
-      'border': 'none',
-      'pointerEvents': 'auto',
-      'cursor': 'pointer',
-      'right': '270px',
-      'top': '18%',
-      'transition': 'transform 0.15s ease, opacity 0.15s ease',
-      '&:hover': {
-        transform: 'translateY(-50%) scale(0.95)',
-      },
-      [theme.breakpoints.down('sm')]: {
-        right: '70px',
-      },
-    },
     emoteImage: {
       width: 100,
       height: 100,
