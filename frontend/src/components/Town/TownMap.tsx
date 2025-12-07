@@ -132,11 +132,9 @@ export default function TownMap(): JSX.Element {
           className={classes.emoteImage}
         />
       </div>
+      <FindOverlayButton />
       <div id='social-container'>
         <SocialSidebar />
-      </div>
-      <div id='petFindButton'>
-        <FindOverlayButton />
       </div>
     </div>
   );
