@@ -856,7 +856,7 @@ export default class TownGameScene extends Phaser.Scene {
 
     // Help text that has a "fixed" position on the screen
     this.add
-      .text(16, 16, `Arrow keys to move`, {
+      .text(16, this.cameras.main.height - 16, `Arrow keys to move\nE to emote`, {
         font: '18px monospace',
         color: '#000000',
         padding: {
@@ -865,6 +865,7 @@ export default class TownGameScene extends Phaser.Scene {
         },
         backgroundColor: '#ffffff',
       })
+      .setOrigin(0, 1)
       .setScrollFactor(0)
       .setDepth(30);
 

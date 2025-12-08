@@ -52,7 +52,7 @@
   z-index: 20;
   pointer-events: none;
   height: 200px;
-  text-align: center;
+  text-align: left;
 }
 #map-container {
   flex-grow: 10;
