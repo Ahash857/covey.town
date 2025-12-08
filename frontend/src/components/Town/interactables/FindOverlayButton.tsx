@@ -3,15 +3,47 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Image, { StaticImageData } from 'next/image';
 import findPng from '../../../../public/assets/buttons/find.png';
-import panelPng from '../../../../public/assets/buttons/findbackgroundPanel.png';
+import { createStyles, makeStyles, Theme } from '@material-ui/core';
+import {
+  Button,
+  Box,
+  Modal,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  VStack,
+} from '@chakra-ui/react';
 
 type Corner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
+const useStyles = makeStyles((theme: Theme) =>
+  createStyles({
+    findButton: {
+      'position': 'fixed',
+      'zIndex': 900,
+      'width': 128,
+      'height': 128,
+      'transform': 'translateY(-50%)',
+      'border': 'none',
+      'pointerEvents': 'auto',
+      'cursor': 'pointer',
+      'right': '270px',
+      'top': '18%',
+      'transition': 'transform 0.15s ease, opacity 0.15s ease',
+      '&:hover': {
+        transform: 'translateY(-50%) scale(0.95)',
+      },
+      [theme.breakpoints.down('sm')]: {
+        right: '70px',
+      },
+    },
+  }),
+);
+
 export default function FindOverlayWithPanel({
   btnSize = 128,
-  panelMaxWidth = 700, // max width the panel can scale to
-  panelPadding = 0, // optional inner padding around the image
-  panelSrc = panelPng, // allow override, default to local import
 }: {
   corner?: Corner;
   offset?: number;
@@ -22,6 +54,11 @@ export default function FindOverlayWithPanel({
 }) {
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
+
+  const closeModal = () => {
+    setOpen(false);
+  };
+  const classes = useStyles();
 
   useEffect(() => setMounted(true), []);
 
@@ -38,92 +75,44 @@ export default function FindOverlayWithPanel({
   return createPortal(
     <>
       {/* Fixed HUD button */}
-      <button
-        aria-label='Open Find Panel'
-        onClick={() => setOpen(true)}
-        style={{
-          position: 'fixed',
-          zIndex: 2147483647,
-          width: btnSize,
-          height: btnSize,
-          border: 'none',
-          padding: 0,
-          background: 'transparent',
-          cursor: 'pointer',
-          right: 270,
-          top: 100,
-        }}>
+      <button className={classes.findButton} onClick={() => setOpen(true)}>
         <Image
           src={findPng}
           alt='Find'
           width={btnSize}
           height={btnSize}
-          priority
           sizes={`${btnSize}px`}
           style={{ imageRendering: 'pixelated', display: 'block' }}
         />
       </button>
 
-      {/* Centered modal panel */}
-      {open && (
-        <div
-          role='dialog'
-          aria-modal='true'
-          onClick={() => setOpen(false)} // click backdrop closes
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 2147483646,
-            background: 'rgba(0,0,0,0.5)', // dim backdrop
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-          {/* Stop propagation so clicks on the panel don't close it */}
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              position: 'relative',
-              width: 'min(90vw, ' + panelMaxWidth + 'px)',
-              // Keep original aspect ratio if we have a StaticImageData import
-              // Fallback to a safe ratio if a string path was provided
-              aspectRatio:
-                typeof panelSrc === 'object'
-                  ? `${(panelSrc as StaticImageData).width}/${(panelSrc as StaticImageData).height}`
-                  : '16/9',
-              padding: panelPadding,
-            }}>
-            <Image
-              src={panelSrc}
-              alt='Find panel'
-              priority
-              sizes={`(max-width: ${panelMaxWidth}px) 90vw, ${panelMaxWidth}px`}
-              style={{
-                imageRendering: 'pixelated',
-                objectFit: 'contain', // show whole panel art centered
-                display: 'block',
-              }}
-            />
-            {/* Optional close X in the corner */}
-            <button
-              aria-label='Close'
-              onClick={() => setOpen(false)}
-              style={{
-                position: 'absolute',
-                top: 8,
-                right: 8,
-                background: 'rgba(0,0,0,0.6)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 6,
-                padding: '4px 8px',
-                cursor: 'pointer',
-              }}>
-              ✕
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Fixed Modal Panel */}
+      <Modal isOpen={open} onClose={closeModal}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader> Find Destination </ModalHeader>
+          <Box maxH='300px' overflowY='auto'>
+            <VStack align='stretch' spacing={2}>
+              <Button>Basement Dining Table 1</Button>
+              <Button>TicTacToe 1</Button>
+              <Button>TicTacToe 2</Button>
+              <Button>Connect Four 1</Button>
+              <Button>Connect Four 2</Button>
+              <Button>Foyer Table 1</Button>
+              <Button>Foyer Table 2</Button>
+              <Button>Foyer Table 3</Button>
+              <Button>Foyer Table 4</Button>
+              <Button>Foyer Table 5</Button>
+              <Button>Foyer Table 6</Button>
+              <Button>Foyer Table 7</Button>
+            </VStack>
+          </Box>
+          <ModalCloseButton />
+          <ModalFooter>
+            <Button onClick={closeModal}>Cancel</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </>,
     document.body,
   );

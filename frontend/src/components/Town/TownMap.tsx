@@ -12,7 +12,6 @@ import clsx from 'clsx';
 import { createStyles, makeStyles, Theme } from '@material-ui/core';
 import FindOverlayButton from './interactables/FindOverlayButton';
 
-
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     chatWindowContainer: {
@@ -141,22 +140,22 @@ export default function TownMap(): JSX.Element {
       </aside>
 
       <div id='map-container' />
-     <div
-      className={classes.emoteBubble}
-      onClick={handleEmoteClick}
-      style={{ opacity: isCoolingDown ? 0.5 : 1, pointerEvents: isCoolingDown ? 'none' : 'auto' }}
-    >
+      <div
+        className={classes.emoteBubble}
+        onClick={handleEmoteClick}
+        style={{
+          opacity: isCoolingDown ? 0.5 : 1,
+          pointerEvents: isCoolingDown ? 'none' : 'auto',
+        }}>
         <img
-          src='/assets/emotes/emote-bubble.png' 
+          src='assets/emotes/emote-bubble.png'
           alt='Open emote menu'
           className={classes.emoteImage}
         />
       </div>
+      <FindOverlayButton />
       <div id='social-container'>
         <SocialSidebar />
-      </div>
-      <div id='petFindButton'>
-        <FindOverlayButton />
       </div>
     </div>
   );
