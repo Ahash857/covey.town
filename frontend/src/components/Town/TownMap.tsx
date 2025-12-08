@@ -103,6 +103,7 @@ export default function TownMap(): JSX.Element {
       };
     }, [coveyTownController]);
 
+      const [isCoolingDown, setIsCoolingDown] = React.useState(false);
       //effect for bubble cooldown
       useEffect(() => {
         let timeout: ReturnType<typeof setTimeout> | undefined;
@@ -127,7 +128,6 @@ export default function TownMap(): JSX.Element {
           if (timeout) clearTimeout(timeout);
         };
       }, [coveyTownController]);
-  const [isCoolingDown, setIsCoolingDown] = React.useState(false);
   const handleEmoteClick = () => {
     if (isCoolingDown) return;
     coveyTownController.toggleEmoteMenu();
