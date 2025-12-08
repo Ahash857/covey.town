@@ -67,49 +67,70 @@ export default function TownMap(): JSX.Element {
   const { isChatWindowOpen } = useChatContext();
   const classes = useStyles();
 
-  useEffect(() => {
-    const config = {
-      type: Phaser.AUTO,
-      backgroundColor: '#000000',
-      parent: 'map-container',
-      render: { pixelArt: true, powerPreference: 'high-performance' },
-      scale: {
-        expandParent: false,
-        mode: Phaser.Scale.ScaleModes.WIDTH_CONTROLS_HEIGHT,
-        autoRound: true,
-      },
-      width: 800,
-      height: 600,
-      fps: { target: 30 },
-      physics: {
-        default: 'arcade',
-        arcade: {
-          gravity: { y: 0 }, // Top down game, so no gravity
+    useEffect(() => {
+      const config = {
+        type: Phaser.AUTO,
+        backgroundColor: '#000000',
+        parent: 'map-container',
+        render: { pixelArt: true, powerPreference: 'high-performance' },
+        scale: {
+          expandParent: false,
+          mode: Phaser.Scale.ScaleModes.WIDTH_CONTROLS_HEIGHT,
+          autoRound: true,
         },
-      },
-    };
+        width: 800,
+        height: 600,
+        fps: { target: 30 },
+        physics: {
+          default: 'arcade',
+          arcade: {
+            gravity: { y: 0 }, // Top down game, so no gravity
+          },
+        },
+      };
 
-    const game = new Phaser.Game(config);
-    const newGameScene = new TownGameScene(coveyTownController);
-    game.scene.add('coveyBoard', newGameScene, true);
-    const pauseListener = newGameScene.pause.bind(newGameScene);
-    const unPauseListener = newGameScene.resume.bind(newGameScene);
-    coveyTownController.addListener('pause', pauseListener);
-    coveyTownController.addListener('unPause', unPauseListener);
-    return () => {
-      coveyTownController.removeListener('pause', pauseListener);
-      coveyTownController.removeListener('unPause', unPauseListener);
-      game.destroy(true);
-    };
-  }, [coveyTownController]);
+      const game = new Phaser.Game(config);
+      const newGameScene = new TownGameScene(coveyTownController);
+      game.scene.add('coveyBoard', newGameScene, true);
+      const pauseListener = newGameScene.pause.bind(newGameScene);
+      const unPauseListener = newGameScene.resume.bind(newGameScene);
+      coveyTownController.addListener('pause', pauseListener);
+      coveyTownController.addListener('unPause', unPauseListener);
+      return () => {
+        coveyTownController.removeListener('pause', pauseListener);
+        coveyTownController.removeListener('unPause', unPauseListener);
+        game.destroy(true);
+      };
+    }, [coveyTownController]);
+
+      //effect for bubble cooldown
+      useEffect(() => {
+        let timeout: ReturnType<typeof setTimeout> | undefined;
+
+        const onEmote = (data: { playerID: string; emoteID: string }) => {
+          if (data.playerID !== coveyTownController.userID) return;
+
+          setIsCoolingDown(true);
+
+          if (timeout) clearTimeout(timeout);
+
+          timeout = setTimeout(() => {
+            setIsCoolingDown(false);
+            timeout = undefined;
+          }, 5000);
+        };
+
+        coveyTownController.addListener('emote', onEmote);
+
+        return () => {
+          coveyTownController.removeListener('emote', onEmote);
+          if (timeout) clearTimeout(timeout);
+        };
+      }, [coveyTownController]);
   const [isCoolingDown, setIsCoolingDown] = React.useState(false);
   const handleEmoteClick = () => {
     if (isCoolingDown) return;
-
     coveyTownController.toggleEmoteMenu();
-
-    setIsCoolingDown(true);
-    setTimeout(() => setIsCoolingDown(false), 5000);
   };
   return (
     <div id='app-container'>
