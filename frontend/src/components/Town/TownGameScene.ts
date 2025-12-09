@@ -26,6 +26,20 @@ function interactableTypeForObjectType(type: string): any {
   }
 }
 
+// -----------------------------------------------------------
+// NEW CODE: WAYPOINT COORDINATES (YOU MUST UPDATE THESE!)
+// -----------------------------------------------------------
+// 1. Walk your player to the arrows in the Lobby. Check console. Update these X/Y.
+const STAIRS_TO_BASEMENT = { x: 0, y: 0 }; 
+
+// 2. Walk your player to the arrows in the Basement. Check console. Update these X/Y.
+const STAIRS_TO_LOBBY = { x: 0, y: 0 }; 
+
+// 3. The Y coordinate that separates the Lobby (top) from Basement (bottom).
+// Usually around 600-800 depending on the map.
+const MAP_SPLIT_Y = 1000; 
+// -----------------------------------------------------------
+
 // Original inspiration and code from:
 // https://medium.com/@michaelwesthadley/modular-game-worlds-in-phaser-3-tilemaps-1-958fc7e6bbd6
 export default class TownGameScene extends Phaser.Scene {
@@ -345,6 +359,13 @@ export default class TownGameScene extends Phaser.Scene {
     this.coveyTownController.emitMovement(this._lastLocation);
   }
 
+  // ---------------------------------------------------
+  // NEW CODE: HELPER TO DETERMINE ROOM BASED ON Y POS
+  // ---------------------------------------------------
+  private getRoom(y: number): 'LOBBY' | 'BASEMENT' {
+    return y < MAP_SPLIT_Y ? 'LOBBY' : 'BASEMENT';
+  }
+
   update() {
     //new code: log my current position to console
     const mySprite = this.coveyTownController.ourPlayer.gameObjects?.sprite;
@@ -437,8 +458,28 @@ export default class TownGameScene extends Phaser.Scene {
           const playerX = gameObjects.sprite.body.x;
           const playerY = gameObjects.sprite.body.y;
 
-          const dx = this._guideTarget.x - playerX;
-          const dy = this._guideTarget.y - playerY;
+          // ---------------------------------------------------
+          // NEW CODE: WAYPOINT NAVIGATION LOGIC
+          // ---------------------------------------------------
+          let effectiveTarget = this._guideTarget;
+          
+          const playerRoom = this.getRoom(playerY);
+          const destinationRoom = this.getRoom(this._guideTarget.y);
+
+          // If we are in different rooms, target the stairs first!
+          if (playerRoom !== destinationRoom) {
+             if (playerRoom === 'LOBBY') {
+                 effectiveTarget = STAIRS_TO_BASEMENT;
+                 // Optional: Only log occasionally to avoid spam
+                 if (Math.random() < 0.01) console.log("Directing to Basement Stairs");
+             } else {
+                 effectiveTarget = STAIRS_TO_LOBBY;
+                 if (Math.random() < 0.01) console.log("Directing to Lobby Stairs");
+             }
+          }
+
+          const dx = effectiveTarget.x - playerX;
+          const dy = effectiveTarget.y - playerY;
           const distanceToTarget = Math.sqrt(dx * dx + dy * dy);
 
           //new code: debug log distance
@@ -448,10 +489,17 @@ export default class TownGameScene extends Phaser.Scene {
 
           //new code: stop guiding if close (150px)
           if (distanceToTarget < 150) { 
-            this._isGuiding = false;
-            this._guideTarget = undefined;
-            console.log("Destination Reached!");
-            this.showPopup("We are here!");
+            // If we reached the waypont (Stairs), don't stop guiding!
+            // Only stop if we reached the REAL target.
+            if (effectiveTarget === this._guideTarget) {
+                this._isGuiding = false;
+                this._guideTarget = undefined;
+                console.log("Destination Reached!");
+                this.showPopup("We are here!");
+            } else {
+                // We reached the stairs. Keep guiding, but maybe show a popup?
+                 if (Math.random() < 0.05) this.showPopup("Go through here!");
+            }
           } else {
             //new code: calculate carrot on stick position
             const leadDistance = 100;
