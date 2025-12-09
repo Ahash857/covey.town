@@ -689,7 +689,7 @@ export default class TownGameScene extends Phaser.Scene {
     anims.create({
       key: 'cat-idle',
       // Subtle front pose for standing (Frames 0-1)
-      frames: anims.generateFrameNames('cat_atlas_key', { prefix: 'cat-front-', start: 0, end: 1 }),
+      frames: [8].map(i => ({ key: 'cat_atlas_key', frame: `cat-front-${i}` })),
       frameRate: 3,
       repeat: -1,
     });
@@ -697,25 +697,25 @@ export default class TownGameScene extends Phaser.Scene {
     // Pet walking animations
     anims.create({
       key: 'cat-walk-front',
-      frames: anims.generateFrameNames('cat_atlas_key', { prefix: 'cat-front-', start: 2, end: 5 }),
+      frames: [0, 1, 2, 6, 7].map(i => ({ key: 'cat_atlas_key', frame: `cat-front-${i}` })),
       frameRate: 10,
       repeat: -1,
     });
     anims.create({
       key: 'cat-walk-left',
-      frames: anims.generateFrameNames('cat_atlas_key', { prefix: 'cat-left-', start: 2, end: 5 }),
+      frames: [0, 1, 2, 6, 7].map(i => ({ key: 'cat_atlas_key', frame: `cat-left-${i}` })),
       frameRate: 10,
       repeat: -1,
     });
     anims.create({
       key: 'cat-walk-right',
-      frames: anims.generateFrameNames('cat_atlas_key', { prefix: 'cat-right-', start: 2, end: 5 }),
+      frames: [0, 1, 2, 6, 7].map(i => ({ key: 'cat_atlas_key', frame: `cat-right-${i}` })),
       frameRate: 10,
       repeat: -1,
     });
     anims.create({
       key: 'cat-walk-back',
-      frames: anims.generateFrameNames('cat_atlas_key', { prefix: 'cat-back-', start: 2, end: 5 }),
+      frames: [0, 1, 2, 6, 7].map(i => ({ key: 'cat_atlas_key', frame: `cat-back-${i}` })),
       frameRate: 10,
       repeat: -1,
     });
@@ -1003,7 +1003,7 @@ export default class TownGameScene extends Phaser.Scene {
       this._emoteMenuContainer.destroy(true);
       this._emoteMenuContainer = undefined;
     }
-  }
+  };
 
   private handleEmoteSelection = (emoteID: string) => {
     this.coveyTownController.emitEmote(emoteID);
