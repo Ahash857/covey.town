@@ -26,6 +26,20 @@ function interactableTypeForObjectType(type: string): any {
   }
 }
 
+// -----------------------------------------------------------
+// NEW CODE: WAYPOINT COORDINATES (YOU MUST UPDATE THESE!)
+// -----------------------------------------------------------
+// 1. Walk your player to the arrows in the Lobby. Check console. Update these X/Y.
+const STAIRS_TO_BASEMENT = { x: 0, y: 0 }; 
+
+// 2. Walk your player to the arrows in the Basement. Check console. Update these X/Y.
+const STAIRS_TO_LOBBY = { x: 0, y: 0 }; 
+
+// 3. The Y coordinate that separates the Lobby (top) from Basement (bottom).
+// Usually around 600-800 depending on the map.
+const MAP_SPLIT_Y = 1000; 
+// -----------------------------------------------------------
+
 // Original inspiration and code from:
 // https://medium.com/@michaelwesthadley/modular-game-worlds-in-phaser-3-tilemaps-1-958fc7e6bbd6
 export default class TownGameScene extends Phaser.Scene {
@@ -42,6 +56,10 @@ export default class TownGameScene extends Phaser.Scene {
   private _cursors: Phaser.Types.Input.Keyboard.CursorKeys[] = [];
 
   private _cursorKeys?: Phaser.Types.Input.Keyboard.CursorKeys;
+
+  //new code: guide variables
+  private _guideTarget?: { x: number; y: number };
+  private _isGuiding = false;
 
   /*
    * A "captured" key doesn't send events to the browser - they are trapped by Phaser
@@ -341,7 +359,22 @@ export default class TownGameScene extends Phaser.Scene {
     this.coveyTownController.emitMovement(this._lastLocation);
   }
 
+  // ---------------------------------------------------
+  // NEW CODE: HELPER TO DETERMINE ROOM BASED ON Y POS
+  // ---------------------------------------------------
+  private getRoom(y: number): 'LOBBY' | 'BASEMENT' {
+    return y < MAP_SPLIT_Y ? 'LOBBY' : 'BASEMENT';
+  }
+
   update() {
+    //new code: log my current position to console
+    const mySprite = this.coveyTownController.ourPlayer.gameObjects?.sprite;
+    if (mySprite) {
+       if (Math.floor(this.time.now) % 1500 < 20) {
+           console.log(`[MY POS] x=${Math.floor(mySprite.x)}, y=${Math.floor(mySprite.y)}`);
+       }
+    }
+
     if (this._paused) {
       return;
     }
@@ -417,9 +450,78 @@ export default class TownGameScene extends Phaser.Scene {
       gameObjects.sprite.body.velocity.normalize().scale(MOVEMENT_SPEED);
 
       if (gameObjects.petSprite) {
-        // Pet Position: Offset set to place the sprite lower-left of player
-        gameObjects.petSprite.setX(gameObjects.sprite.getBounds().centerX - 25);
-        gameObjects.petSprite.setY(gameObjects.sprite.getBounds().centerY + 15);
+        //new code: pet guiding logic
+        let petTargetX = gameObjects.sprite.getBounds().centerX - 25;
+        let petTargetY = gameObjects.sprite.getBounds().centerY + 15;
+
+        if (this._isGuiding && this._guideTarget) {
+          const playerX = gameObjects.sprite.body.x;
+          const playerY = gameObjects.sprite.body.y;
+
+          // ---------------------------------------------------
+          // NEW CODE: WAYPOINT NAVIGATION LOGIC
+          // ---------------------------------------------------
+          let effectiveTarget = this._guideTarget;
+          
+          const playerRoom = this.getRoom(playerY);
+          const destinationRoom = this.getRoom(this._guideTarget.y);
+
+          // If we are in different rooms, target the stairs first!
+          if (playerRoom !== destinationRoom) {
+             if (playerRoom === 'LOBBY') {
+                 effectiveTarget = STAIRS_TO_BASEMENT;
+                 // Optional: Only log occasionally to avoid spam
+                 if (Math.random() < 0.01) console.log("Directing to Basement Stairs");
+             } else {
+                 effectiveTarget = STAIRS_TO_LOBBY;
+                 if (Math.random() < 0.01) console.log("Directing to Lobby Stairs");
+             }
+          }
+
+          const dx = effectiveTarget.x - playerX;
+          const dy = effectiveTarget.y - playerY;
+          const distanceToTarget = Math.sqrt(dx * dx + dy * dy);
+
+          //new code: debug log distance
+          if (Math.random() < 0.05) {
+             console.log(`Distance to target: ${Math.floor(distanceToTarget)}`);
+          }
+
+          //new code: stop guiding if close (150px)
+          if (distanceToTarget < 150) { 
+            // If we reached the waypont (Stairs), don't stop guiding!
+            // Only stop if we reached the REAL target.
+            if (effectiveTarget === this._guideTarget) {
+                this._isGuiding = false;
+                this._guideTarget = undefined;
+                console.log("Destination Reached!");
+                this.showPopup("We are here!");
+            } else {
+                // We reached the stairs. Keep guiding, but maybe show a popup?
+                 if (Math.random() < 0.05) this.showPopup("Go through here!");
+            }
+          } else {
+            //new code: calculate carrot on stick position
+            const leadDistance = 100;
+            const unitX = dx / distanceToTarget;
+            const unitY = dy / distanceToTarget;
+
+            const targetLeadX = playerX + unitX * leadDistance;
+            const targetLeadY = playerY + unitY * leadDistance;
+
+            const currentPetX = gameObjects.petSprite.x;
+            const currentPetY = gameObjects.petSprite.y;
+
+            petTargetX = Phaser.Math.Linear(currentPetX, targetLeadX, 0.1);
+            petTargetY = Phaser.Math.Linear(currentPetY, targetLeadY, 0.1);
+
+            if (dx < 0) gameObjects.petSprite.anims.play('cat-walk-left', true);
+            else gameObjects.petSprite.anims.play('cat-walk-right', true);
+          }
+        }
+        
+        gameObjects.petSprite.setX(petTargetX);
+        gameObjects.petSprite.setY(petTargetY);
         gameObjects.petSprite.setVisible(gameObjects.sprite.visible);
       }
 
@@ -462,6 +564,11 @@ export default class TownGameScene extends Phaser.Scene {
 
       //Update the location for the labels of all of the other players
       for (const player of this._players) {
+        //new code: skip my own player so guide works
+        if (player === this.coveyTownController.ourPlayer) {
+          continue;
+        }
+
         if (player.gameObjects?.label && player.gameObjects?.sprite.body) {
           player.gameObjects.label.setX(player.gameObjects.sprite.body.x);
           player.gameObjects.label.setY(player.gameObjects.sprite.body.y - 20);
@@ -863,6 +970,55 @@ export default class TownGameScene extends Phaser.Scene {
     this._onGameReadyListeners.forEach(listener => listener());
     this._onGameReadyListeners = [];
     this.coveyTownController.addListener('playersChanged', players => this.updatePlayers(players));
+
+    //new code: event listener setup
+    const guideHandler = (e: any) => {
+        //new code: zombie check to avoid crashes
+        if (!this.sys || !this.sys.isActive()) return;
+
+        const coords = e.detail;
+        if (coords && coords.x && coords.y) {
+            this._guideTarget = { x: coords.x, y: coords.y };
+            this._isGuiding = true;
+            
+            console.log(`[GUIDE START] Guiding to (${coords.x}, ${coords.y})`);
+            this.showPopup("Follow me!");
+        }
+    };
+
+    window.addEventListener('pet-guide-to', guideHandler);
+
+    //new code: remove listener when scene is destroyed
+    this.events.once(Phaser.Scenes.Events.DESTROY, () => {
+        window.removeEventListener('pet-guide-to', guideHandler);
+    });
+  }
+
+  //new code: show popup message
+  private showPopup(message: string) {
+    if (!this.sys || !this.sys.isActive()) return;
+    
+    const gameObjects = this.coveyTownController.ourPlayer.gameObjects;
+    if (!gameObjects || !gameObjects.petSprite) return;
+
+    try {
+        const text = this.add.text(gameObjects.petSprite.x, gameObjects.petSprite.y - 40, message, {
+          font: '16px monospace',
+          color: '#FFFFFF',
+          backgroundColor: '#000000',
+          padding: { x: 5, y: 5 },
+        }).setDepth(100).setOrigin(0.5);
+    
+        this.tweens.add({
+          targets: text,
+          y: text.y - 30, // Float up
+          alpha: 0,
+          duration: 2000,
+          onComplete: () => text.destroy(),
+        });
+    } catch (err) {
+        console.warn("Could not show popup, scene might be destroying", err);
+    }
   }
 
   private applyHoverEffect = (
