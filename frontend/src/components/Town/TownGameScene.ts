@@ -30,14 +30,30 @@ function interactableTypeForObjectType(type: string): any {
 // NEW CODE: WAYPOINT COORDINATES (YOU MUST UPDATE THESE!)
 // -----------------------------------------------------------
 // 1. Walk your player to the arrows in the Lobby. Check console. Update these X/Y.
-const STAIRS_TO_BASEMENT = { x: 0, y: 0 }; 
+const STAIRS_TO_BASEMENT = { x: 2959, y: 1219 };
 
 // 2. Walk your player to the arrows in the Basement. Check console. Update these X/Y.
-const STAIRS_TO_LOBBY = { x: 0, y: 0 }; 
+const STAIRS_TO_LOBBY = { x: 2493, y: 1220 };
 
 // 3. The Y coordinate that separates the Lobby (top) from Basement (bottom).
 // Usually around 600-800 depending on the map.
-const MAP_SPLIT_Y = 1000; 
+const MAP_SPLIT_Y = 1000;
+
+// 4. Coords to identify the main lobby
+const X_A = 2950;
+const Y_A = 744;
+const X_B = 3730;
+const Y_B = 1280;
+
+// Building min and max to be safe
+const MIN_X = Math.min(X_A, X_B);
+const MAX_X = Math.max(X_A, X_B);
+const MIN_Y = Math.min(Y_A, Y_B);
+const MAX_Y = Math.max(Y_A, Y_B);
+
+// Main lobby rectangle
+const lobbyRect = new Phaser.Geom.Rectangle(MIN_X, MIN_Y, MAX_X - MIN_X, MAX_Y - MIN_Y);
+
 // -----------------------------------------------------------
 
 // Original inspiration and code from:
@@ -362,8 +378,8 @@ export default class TownGameScene extends Phaser.Scene {
   // ---------------------------------------------------
   // NEW CODE: HELPER TO DETERMINE ROOM BASED ON Y POS
   // ---------------------------------------------------
-  private getRoom(y: number): 'LOBBY' | 'BASEMENT' {
-    return y < MAP_SPLIT_Y ? 'LOBBY' : 'BASEMENT';
+  private _isPlayerUpStairs(playerX: number, playerY: number): boolean {
+    return lobbyRect.contains(playerX, playerY);
   }
 
   update() {
@@ -462,20 +478,20 @@ export default class TownGameScene extends Phaser.Scene {
           // NEW CODE: WAYPOINT NAVIGATION LOGIC
           // ---------------------------------------------------
           let effectiveTarget = this._guideTarget;
-          
-          const playerRoom = this.getRoom(playerY);
-          const destinationRoom = this.getRoom(this._guideTarget.y);
+
+          const playerRoom = this._isPlayerUpStairs(playerX, playerY);
+          const destinationRoom = this._isPlayerUpStairs(this._guideTarget.x, this._guideTarget.y);
 
           // If we are in different rooms, target the stairs first!
           if (playerRoom !== destinationRoom) {
-             if (playerRoom === 'LOBBY') {
-                 effectiveTarget = STAIRS_TO_BASEMENT;
-                 // Optional: Only log occasionally to avoid spam
-                 if (Math.random() < 0.01) console.log("Directing to Basement Stairs");
-             } else {
-                 effectiveTarget = STAIRS_TO_LOBBY;
-                 if (Math.random() < 0.01) console.log("Directing to Lobby Stairs");
-             }
+            if (playerRoom) {
+              effectiveTarget = STAIRS_TO_BASEMENT;
+              // Optional: Only log occasionally to avoid spam
+              if (Math.random() < 0.01) console.log('Directing to Basement Stairs');
+            } else {
+              effectiveTarget = STAIRS_TO_LOBBY;
+              if (Math.random() < 0.01) console.log('Directing to Lobby Stairs');
+            }
           }
 
           const dx = effectiveTarget.x - playerX;
@@ -488,7 +504,7 @@ export default class TownGameScene extends Phaser.Scene {
           }
 
           //new code: stop guiding if close (150px)
-          if (distanceToTarget < 150) { 
+          if (distanceToTarget < 150) {
             // If we reached the waypont (Stairs), don't stop guiding!
             // Only stop if we reached the REAL target.
             if (effectiveTarget === this._guideTarget) {
@@ -519,7 +535,7 @@ export default class TownGameScene extends Phaser.Scene {
             else gameObjects.petSprite.anims.play('cat-walk-right', true);
           }
         }
-        
+
         gameObjects.petSprite.setX(petTargetX);
         gameObjects.petSprite.setY(petTargetY);
         gameObjects.petSprite.setVisible(gameObjects.sprite.visible);
@@ -755,7 +771,7 @@ export default class TownGameScene extends Phaser.Scene {
       .setDepth(6);
 
     // Local player pet creation
-    const petSprite = this.add
+    const petSprite = this.physics.add
       .sprite(spawnPoint.x - 25, spawnPoint.y + 15, 'cat_atlas_key')
       .setScale(1.0)
       .setDepth(6)
@@ -787,6 +803,7 @@ export default class TownGameScene extends Phaser.Scene {
     this._collidingLayers.push(aboveLayer);
     this._collidingLayers.push(onTheWallsLayer);
     this._collidingLayers.forEach(layer => this.physics.add.collider(sprite, layer));
+    this._collidingLayers.forEach(layer => this.physics.add.collider(petSprite, layer));
 
     // Create the player's walking animations from the texture atlas. These are stored in the global
     // animation manager so any sprite can access them.
@@ -980,7 +997,7 @@ export default class TownGameScene extends Phaser.Scene {
         if (coords && coords.x && coords.y) {
             this._guideTarget = { x: coords.x, y: coords.y };
             this._isGuiding = true;
-            
+
             console.log(`[GUIDE START] Guiding to (${coords.x}, ${coords.y})`);
             this.showPopup("Follow me!");
         }
@@ -997,7 +1014,7 @@ export default class TownGameScene extends Phaser.Scene {
   //new code: show popup message
   private showPopup(message: string) {
     if (!this.sys || !this.sys.isActive()) return;
-    
+
     const gameObjects = this.coveyTownController.ourPlayer.gameObjects;
     if (!gameObjects || !gameObjects.petSprite) return;
 
@@ -1008,7 +1025,7 @@ export default class TownGameScene extends Phaser.Scene {
           backgroundColor: '#000000',
           padding: { x: 5, y: 5 },
         }).setDepth(100).setOrigin(0.5);
-    
+
         this.tweens.add({
           targets: text,
           y: text.y - 30, // Float up
@@ -1228,7 +1245,7 @@ export default class TownGameScene extends Phaser.Scene {
         .setOffset(0, 24);
 
       // Other player pet creation
-      const petSprite = this.add
+      const petSprite = this.physics.add
         .sprite(player.location.x - 25, player.location.y + 15, 'cat_atlas_key')
         .setScale(1.0)
         .setDepth(6)
@@ -1252,6 +1269,7 @@ export default class TownGameScene extends Phaser.Scene {
         locationManagedByGameScene: false,
       };
       this._collidingLayers.forEach(layer => this.physics.add.collider(sprite, layer));
+      this._collidingLayers.forEach(layer => this.physics.add.collider(petSprite, layer));
     }
   }
 

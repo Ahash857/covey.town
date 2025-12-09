@@ -20,17 +20,17 @@ type Corner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 //new code: list of destinations with real coordinates
 const DESTINATIONS: Record<string, { x: number; y: number }> = {
   'Basement Dining Table 1': { x: 3005, y: 1111 },
-  'TicTacToe 1': { x: 3259, y: 1216 },
-  'TicTacToe 2': { x: 3468, y: 1126 },
-  'Connect Four 1': { x: 3357, y: 1245 },
-  'Connect Four 2': { x: 3115, y: 986 },
-  'Foyer Table 1': { x: 800, y: 200 },
-  'Foyer Table 2': { x: 850, y: 200 },
-  'Foyer Table 3': { x: 900, y: 200 },
-  'Foyer Table 4': { x: 950, y: 200 },
-  'Foyer Table 5': { x: 1000, y: 200 },
-  'Foyer Table 6': { x: 1050, y: 200 },
-  'Foyer Table 7': { x: 1100, y: 200 },
+  'TicTacToe 1': { x: 3337, y: 1257 },
+  'TicTacToe 2': { x: 3553, y: 1056 },
+  'Connect Four 1': { x: 3005, y: 810 },
+  'Connect Four 2': { x: 3009, y: 968 },
+  'Foyer Table 1': { x: 273, y: 1102 },
+  'Foyer Table 2': { x: 480, y: 1102 },
+  'Foyer Table 3': { x: 700, y: 1102 },
+  'Foyer Table 4': { x: 938, y: 1102 },
+  'Foyer Table 5': { x: 1174, y: 1102 },
+  'Foyer Table 6': { x: 1431, y: 1102 },
+  'Foyer Table 7': { x: 1664, y: 1102 },
 };
 
 const useStyles = makeStyles((theme: Theme) =>
