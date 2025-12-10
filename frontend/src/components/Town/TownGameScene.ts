@@ -382,9 +382,9 @@ export default class TownGameScene extends Phaser.Scene {
     //new code: log my current position to console
     const mySprite = this.coveyTownController.ourPlayer.gameObjects?.sprite;
     if (mySprite) {
-       if (Math.floor(this.time.now) % 1500 < 20) {
-           console.log(`[MY POS] x=${Math.floor(mySprite.x)}, y=${Math.floor(mySprite.y)}`);
-       }
+      if (Math.floor(this.time.now) % 1500 < 20) {
+        console.log(`[MY POS] x=${Math.floor(mySprite.x)}, y=${Math.floor(mySprite.y)}`);
+      }
     }
 
     if (this._paused) {
@@ -469,7 +469,6 @@ export default class TownGameScene extends Phaser.Scene {
               gameObjects.petSprite.setTexture('cat_atlas_key', 'cat-front-1');
             }
           }
-
           break;
         }
       }
@@ -520,13 +519,13 @@ export default class TownGameScene extends Phaser.Scene {
             // If we reached the waypont (Stairs), don't stop guiding!
             // Only stop if we reached the REAL target.
             if (effectiveTarget === this._guideTarget) {
-                this._isGuiding = false;
-                this._guideTarget = undefined;
-                console.log("Destination Reached!");
-                this.showPopup("We are here!");
+              this._isGuiding = false;
+              this._guideTarget = undefined;
+              console.log('Destination Reached!');
+              this._showPopup('We are here!');
             } else {
-                // We reached the stairs. Keep guiding, but maybe show a popup?
-                 if (Math.random() < 0.05) this.showPopup("Go through here!");
+              // We reached the stairs. Keep guiding, but maybe show a popup?
+              if (Math.random() < 0.05) this._showPopup('Go through here!');
             }
           } else {
             //new code: calculate carrot on stick position
@@ -624,7 +623,16 @@ export default class TownGameScene extends Phaser.Scene {
 
             // Control animation based on player movement state
             if (!player.location.moving) {
-              player.gameObjects.petSprite.anims.play('cat-idle', true);
+              //player.gameObjects.petSprite.anims.play('cat-idle', true);
+              if (player.location.rotation === 'front') {
+                player.gameObjects.petSprite.anims.play('cat-front-1', true);
+              } else if (player.location.rotation === 'back') {
+                player.gameObjects.petSprite.anims.play('cat-back-1', true);
+              } else if (player.location.rotation === 'left') {
+                player.gameObjects.petSprite.anims.play('cat-left-1', true);
+              } else if (player.location.rotation === 'right') {
+                player.gameObjects.petSprite.anims.play('cat-right-1', true);
+              }
             } else {
               //Player is moving: Play the corresponding directional walk animation.
               const petAnimKey = `cat-walk-${player.location.rotation}`;
@@ -799,7 +807,7 @@ export default class TownGameScene extends Phaser.Scene {
       .setDepth(6);
 
     // Local player pet creation
-    const petSprite = this.physics.add
+    const petSprite = this.add
       .sprite(spawnPoint.x - 25, spawnPoint.y + 15, 'cat_atlas_key')
       .setScale(1.0)
       .setDepth(6)
@@ -831,7 +839,6 @@ export default class TownGameScene extends Phaser.Scene {
     this._collidingLayers.push(aboveLayer);
     this._collidingLayers.push(onTheWallsLayer);
     this._collidingLayers.forEach(layer => this.physics.add.collider(sprite, layer));
-    this._collidingLayers.forEach(layer => this.physics.add.collider(petSprite, layer));
 
     // Create the player's walking animations from the texture atlas. These are stored in the global
     // animation manager so any sprite can access them.
@@ -1018,51 +1025,54 @@ export default class TownGameScene extends Phaser.Scene {
 
     //new code: event listener setup
     const guideHandler = (e: any) => {
-        //new code: zombie check to avoid crashes
-        if (!this.sys || !this.sys.isActive()) return;
+      //new code: zombie check to avoid crashes
+      if (!this.sys || !this.sys.isActive()) return;
 
-        const coords = e.detail;
-        if (coords && coords.x && coords.y) {
-            this._guideTarget = { x: coords.x, y: coords.y };
-            this._isGuiding = true;
+      const coords = e.detail;
+      if (coords && coords.x && coords.y) {
+        this._guideTarget = { x: coords.x, y: coords.y };
+        this._isGuiding = true;
 
-            console.log(`[GUIDE START] Guiding to (${coords.x}, ${coords.y})`);
-            this.showPopup("Follow me!");
-        }
+        console.log(`[GUIDE START] Guiding to (${coords.x}, ${coords.y})`);
+        this._showPopup('Follow me!');
+      }
     };
 
     window.addEventListener('pet-guide-to', guideHandler);
 
     //new code: remove listener when scene is destroyed
     this.events.once(Phaser.Scenes.Events.DESTROY, () => {
-        window.removeEventListener('pet-guide-to', guideHandler);
+      window.removeEventListener('pet-guide-to', guideHandler);
     });
   }
 
   //new code: show popup message
-  private showPopup(message: string) {
+  private _showPopup(message: string) {
     if (!this.sys || !this.sys.isActive()) return;
 
     const gameObjects = this.coveyTownController.ourPlayer.gameObjects;
     if (!gameObjects || !gameObjects.petSprite) return;
 
     try {
-        const text = this.add.text(gameObjects.petSprite.x, gameObjects.petSprite.y - 40, message, {
+      const text = this.add
+        .text(gameObjects.petSprite.x, gameObjects.petSprite.y - 40, message, {
           font: '16px monospace',
           color: '#FFFFFF',
           backgroundColor: '#000000',
           padding: { x: 5, y: 5 },
-        }).setDepth(100).setOrigin(0.5);
+        })
+        .setDepth(100)
+        .setOrigin(0.5);
 
-        this.tweens.add({
-          targets: text,
-          y: text.y - 30, // Float up
-          alpha: 0,
-          duration: 2000,
-          onComplete: () => text.destroy(),
-        });
+      this.tweens.add({
+        targets: text,
+        y: text.y - 30, // Float up
+        alpha: 0,
+        duration: 2000,
+        onComplete: () => text.destroy(),
+      });
     } catch (err) {
-        console.warn("Could not show popup, scene might be destroying", err);
+      console.warn('Could not show popup, scene might be destroying', err);
     }
   }
 
@@ -1276,8 +1286,7 @@ export default class TownGameScene extends Phaser.Scene {
       const petSprite = this.physics.add
         .sprite(player.location.x - 25, player.location.y + 15, 'cat_atlas_key')
         .setScale(1.0)
-        .setDepth(6)
-        .play('cat-idle');
+        .setDepth(6);
 
       const label = this.add.text(
         player.location.x,
