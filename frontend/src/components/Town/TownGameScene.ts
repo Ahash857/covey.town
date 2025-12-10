@@ -26,6 +26,32 @@ function interactableTypeForObjectType(type: string): any {
   }
 }
 
+// -----------------------------------------------------------
+// NEW CODE: WAYPOINT COORDINATES (YOU MUST UPDATE THESE!)
+// -----------------------------------------------------------
+// 1. Walk your player to the arrows in the Lobby. Check console. Update these X/Y.
+const STAIRS_TO_BASEMENT = { x: 2959, y: 1219 };
+
+// 2. Walk your player to the arrows in the Basement. Check console. Update these X/Y.
+const STAIRS_TO_LOBBY = { x: 2493, y: 1220 };
+
+// 4. Coords to identify the main lobby
+const X_A = 2930;
+const Y_A = 640;
+const X_B = 3731;
+const Y_B = 1281;
+
+// Building min and max to be safe
+const MIN_X = Math.min(X_A, X_B);
+const MAX_X = Math.max(X_A, X_B);
+const MIN_Y = Math.min(Y_A, Y_B);
+const MAX_Y = Math.max(Y_A, Y_B);
+
+// Main lobby rectangle
+const lobbyRect = new Phaser.Geom.Rectangle(MIN_X, MIN_Y, MAX_X - MIN_X, MAX_Y - MIN_Y);
+
+// -----------------------------------------------------------
+
 // Original inspiration and code from:
 // https://medium.com/@michaelwesthadley/modular-game-worlds-in-phaser-3-tilemaps-1-958fc7e6bbd6
 export default class TownGameScene extends Phaser.Scene {
@@ -42,6 +68,10 @@ export default class TownGameScene extends Phaser.Scene {
   private _cursors: Phaser.Types.Input.Keyboard.CursorKeys[] = [];
 
   private _cursorKeys?: Phaser.Types.Input.Keyboard.CursorKeys;
+
+  //new code: guide variables
+  private _guideTarget?: { x: number; y: number };
+  private _isGuiding = false;
 
   /*
    * A "captured" key doesn't send events to the browser - they are trapped by Phaser
@@ -341,7 +371,22 @@ export default class TownGameScene extends Phaser.Scene {
     this.coveyTownController.emitMovement(this._lastLocation);
   }
 
+  // ---------------------------------------------------
+  // NEW CODE: HELPER TO DETERMINE ROOM BASED ON Y POS
+  // ---------------------------------------------------
+  private _isPlayerUpStairs(playerX: number, playerY: number): boolean {
+    return lobbyRect.contains(playerX, playerY);
+  }
+
   update() {
+    //new code: log my current position to console
+    const mySprite = this.coveyTownController.ourPlayer.gameObjects?.sprite;
+    if (mySprite) {
+      if (Math.floor(this.time.now) % 1500 < 20) {
+        console.log(`[MY POS] x=${Math.floor(mySprite.x)}, y=${Math.floor(mySprite.y)}`);
+      }
+    }
+
     if (this._paused) {
       return;
     }
@@ -393,7 +438,7 @@ export default class TownGameScene extends Phaser.Scene {
             gameObjects.petSprite.anims.play('cat-walk-back', true);
           }
           break;
-        default:
+        default: {
           // Not moving
           gameObjects.sprite.anims.stop();
           // If we were moving, pick and idle frame to use
@@ -403,23 +448,123 @@ export default class TownGameScene extends Phaser.Scene {
             gameObjects.sprite.setTexture('atlas', 'misa-right');
           } else if (prevVelocity.y < 0) {
             gameObjects.sprite.setTexture('atlas', 'misa-back');
-          } else if (prevVelocity.y > 0) gameObjects.sprite.setTexture('atlas', 'misa-front');
-
-          // Start pet idle animation
-          if (gameObjects.petSprite) {
-            gameObjects.petSprite.anims.play('cat-idle', true);
+          } else if (prevVelocity.y > 0) {
+            gameObjects.sprite.setTexture('atlas', 'misa-front');
           }
 
+          // Start pet idle animation
+          const misaTextureMovement = gameObjects.sprite.frame.name;
+
+          if (gameObjects.petSprite) {
+            if (misaTextureMovement.includes('left')) {
+              gameObjects.petSprite.setTexture('cat_atlas_key', 'cat-left-1');
+            }
+            if (misaTextureMovement.includes('right')) {
+              gameObjects.petSprite.setTexture('cat_atlas_key', 'cat-right-1');
+            }
+            if (misaTextureMovement.includes('back')) {
+              gameObjects.petSprite.setTexture('cat_atlas_key', 'cat-back-1');
+            }
+            if (misaTextureMovement.includes('front')) {
+              gameObjects.petSprite.setTexture('cat_atlas_key', 'cat-front-1');
+            }
+          }
           break;
+        }
       }
 
       // Normalize and scale the velocity so that player can't move faster along a diagonal
       gameObjects.sprite.body.velocity.normalize().scale(MOVEMENT_SPEED);
 
       if (gameObjects.petSprite) {
-        // Pet Position: Offset set to place the sprite lower-left of player
-        gameObjects.petSprite.setX(gameObjects.sprite.getBounds().centerX - 25);
-        gameObjects.petSprite.setY(gameObjects.sprite.getBounds().centerY + 15);
+        //new code: pet guiding logic
+        let petTargetX = gameObjects.sprite.getBounds().centerX - 25;
+        let petTargetY = gameObjects.sprite.getBounds().centerY + 15;
+
+        if (this._isGuiding && this._guideTarget) {
+          const playerX = gameObjects.sprite.body.x;
+          const playerY = gameObjects.sprite.body.y;
+
+          // ---------------------------------------------------
+          // NEW CODE: WAYPOINT NAVIGATION LOGIC
+          // ---------------------------------------------------
+          let effectiveTarget = this._guideTarget;
+
+          const playerRoom = this._isPlayerUpStairs(playerX, playerY);
+          const destinationRoom = this._isPlayerUpStairs(this._guideTarget.x, this._guideTarget.y);
+
+          // If we are in different rooms, target the stairs first!
+          if (playerRoom !== destinationRoom) {
+            if (playerRoom) {
+              effectiveTarget = STAIRS_TO_BASEMENT;
+              // Optional: Only log occasionally to avoid spam
+              if (Math.random() < 0.01) console.log('Directing to Basement Stairs');
+            } else {
+              effectiveTarget = STAIRS_TO_LOBBY;
+              if (Math.random() < 0.01) console.log('Directing to Lobby Stairs');
+            }
+          }
+
+          const dx = effectiveTarget.x - playerX;
+          const dy = effectiveTarget.y - playerY;
+          const distanceToTarget = Math.sqrt(dx * dx + dy * dy);
+
+          //new code: debug log distance
+          if (Math.random() < 0.05) {
+            console.log(`Distance to target: ${Math.floor(distanceToTarget)}`);
+          }
+
+          //new code: stop guiding if close (150px)
+          if (distanceToTarget < 150) {
+            // If we reached the waypont (Stairs), don't stop guiding!
+            // Only stop if we reached the REAL target.
+            if (effectiveTarget === this._guideTarget) {
+              this._isGuiding = false;
+              this._guideTarget = undefined;
+              console.log('Destination Reached!');
+              this._showPopup('We are here!');
+            } else {
+              // We reached the stairs. Keep guiding, but maybe show a popup?
+              if (Math.random() < 0.05) this._showPopup('Go through here!');
+            }
+          } else {
+            //new code: calculate carrot on stick position
+            const leadDistance = 100;
+            const unitX = dx / distanceToTarget;
+            const unitY = dy / distanceToTarget;
+
+            const targetLeadX = playerX + unitX * leadDistance;
+            const targetLeadY = playerY + unitY * leadDistance;
+
+            const currentPetX = gameObjects.petSprite.x;
+            const currentPetY = gameObjects.petSprite.y;
+
+            petTargetX = Phaser.Math.Linear(currentPetX, targetLeadX, 0.12);
+            petTargetY = Phaser.Math.Linear(currentPetY, targetLeadY, 0.12);
+
+            const prevPetX = gameObjects.petSprite.x;
+            const prevPetY = gameObjects.petSprite.y;
+
+            const mvxc = petTargetX - prevPetX;
+            const mvyc = petTargetY - prevPetY;
+            const speedc = Math.hypot(mvxc, mvyc);
+            if (speedc < 1.5) {
+              gameObjects.petSprite.anims.play('cat-idle', true);
+            } else {
+              // choose direction while returning
+              if (Math.abs(mvxc) >= Math.abs(mvyc)) {
+                if (mvxc < 0) gameObjects.petSprite.anims.play('cat-walk-left', true);
+                else gameObjects.petSprite.anims.play('cat-walk-right', true);
+              } else {
+                if (mvyc < 0) gameObjects.petSprite.anims.play('cat-walk-back', true);
+                else gameObjects.petSprite.anims.play('cat-walk-front', true);
+              }
+            }
+          }
+        }
+
+        gameObjects.petSprite.setX(petTargetX);
+        gameObjects.petSprite.setY(petTargetY);
         gameObjects.petSprite.setVisible(gameObjects.sprite.visible);
       }
 
@@ -462,6 +607,11 @@ export default class TownGameScene extends Phaser.Scene {
 
       //Update the location for the labels of all of the other players
       for (const player of this._players) {
+        //new code: skip my own player so guide works
+        if (player === this.coveyTownController.ourPlayer) {
+          continue;
+        }
+
         if (player.gameObjects?.label && player.gameObjects?.sprite.body) {
           player.gameObjects.label.setX(player.gameObjects.sprite.body.x);
           player.gameObjects.label.setY(player.gameObjects.sprite.body.y - 20);
@@ -473,9 +623,18 @@ export default class TownGameScene extends Phaser.Scene {
 
             // Control animation based on player movement state
             if (!player.location.moving) {
-              player.gameObjects.petSprite.anims.play('cat-idle', true);
+              //player.gameObjects.petSprite.anims.play('cat-idle', true);
+              if (player.location.rotation === 'front') {
+                player.gameObjects.petSprite.anims.play('cat-front-1', true);
+              } else if (player.location.rotation === 'back') {
+                player.gameObjects.petSprite.anims.play('cat-back-1', true);
+              } else if (player.location.rotation === 'left') {
+                player.gameObjects.petSprite.anims.play('cat-left-1', true);
+              } else if (player.location.rotation === 'right') {
+                player.gameObjects.petSprite.anims.play('cat-right-1', true);
+              }
             } else {
-              // Player is moving: Play the corresponding directional walk animation.
+              //Player is moving: Play the corresponding directional walk animation.
               const petAnimKey = `cat-walk-${player.location.rotation}`;
               player.gameObjects.petSprite.anims.play(petAnimKey, true);
             }
@@ -689,7 +848,7 @@ export default class TownGameScene extends Phaser.Scene {
     anims.create({
       key: 'cat-idle',
       // Subtle front pose for standing (Frames 0-1)
-      frames: anims.generateFrameNames('cat_atlas_key', { prefix: 'cat-front-', start: 0, end: 1 }),
+      frames: [8].map(i => ({ key: 'cat_atlas_key', frame: `cat-front-${i}` })),
       frameRate: 3,
       repeat: -1,
     });
@@ -697,25 +856,25 @@ export default class TownGameScene extends Phaser.Scene {
     // Pet walking animations
     anims.create({
       key: 'cat-walk-front',
-      frames: anims.generateFrameNames('cat_atlas_key', { prefix: 'cat-front-', start: 2, end: 5 }),
+      frames: [0, 1, 2, 6, 7].map(i => ({ key: 'cat_atlas_key', frame: `cat-front-${i}` })),
       frameRate: 10,
       repeat: -1,
     });
     anims.create({
       key: 'cat-walk-left',
-      frames: anims.generateFrameNames('cat_atlas_key', { prefix: 'cat-left-', start: 2, end: 5 }),
+      frames: [0, 1, 2, 6, 7].map(i => ({ key: 'cat_atlas_key', frame: `cat-left-${i}` })),
       frameRate: 10,
       repeat: -1,
     });
     anims.create({
       key: 'cat-walk-right',
-      frames: anims.generateFrameNames('cat_atlas_key', { prefix: 'cat-right-', start: 2, end: 5 }),
+      frames: [0, 1, 2, 6, 7].map(i => ({ key: 'cat_atlas_key', frame: `cat-right-${i}` })),
       frameRate: 10,
       repeat: -1,
     });
     anims.create({
       key: 'cat-walk-back',
-      frames: anims.generateFrameNames('cat_atlas_key', { prefix: 'cat-back-', start: 2, end: 5 }),
+      frames: [0, 1, 2, 6, 7].map(i => ({ key: 'cat_atlas_key', frame: `cat-back-${i}` })),
       frameRate: 10,
       repeat: -1,
     });
@@ -863,6 +1022,58 @@ export default class TownGameScene extends Phaser.Scene {
     this._onGameReadyListeners.forEach(listener => listener());
     this._onGameReadyListeners = [];
     this.coveyTownController.addListener('playersChanged', players => this.updatePlayers(players));
+
+    //new code: event listener setup
+    const guideHandler = (e: any) => {
+      //new code: zombie check to avoid crashes
+      if (!this.sys || !this.sys.isActive()) return;
+
+      const coords = e.detail;
+      if (coords && coords.x && coords.y) {
+        this._guideTarget = { x: coords.x, y: coords.y };
+        this._isGuiding = true;
+
+        console.log(`[GUIDE START] Guiding to (${coords.x}, ${coords.y})`);
+        this._showPopup('Follow me!');
+      }
+    };
+
+    window.addEventListener('pet-guide-to', guideHandler);
+
+    //new code: remove listener when scene is destroyed
+    this.events.once(Phaser.Scenes.Events.DESTROY, () => {
+      window.removeEventListener('pet-guide-to', guideHandler);
+    });
+  }
+
+  //new code: show popup message
+  private _showPopup(message: string) {
+    if (!this.sys || !this.sys.isActive()) return;
+
+    const gameObjects = this.coveyTownController.ourPlayer.gameObjects;
+    if (!gameObjects || !gameObjects.petSprite) return;
+
+    try {
+      const text = this.add
+        .text(gameObjects.petSprite.x, gameObjects.petSprite.y - 40, message, {
+          font: '16px monospace',
+          color: '#FFFFFF',
+          backgroundColor: '#000000',
+          padding: { x: 5, y: 5 },
+        })
+        .setDepth(100)
+        .setOrigin(0.5);
+
+      this.tweens.add({
+        targets: text,
+        y: text.y - 30, // Float up
+        alpha: 0,
+        duration: 2000,
+        onComplete: () => text.destroy(),
+      });
+    } catch (err) {
+      console.warn('Could not show popup, scene might be destroying', err);
+    }
   }
 
   private applyHoverEffect = (
@@ -1003,7 +1214,7 @@ export default class TownGameScene extends Phaser.Scene {
       this._emoteMenuContainer.destroy(true);
       this._emoteMenuContainer = undefined;
     }
-  }
+  };
 
   private handleEmoteSelection = (emoteID: string) => {
     this.coveyTownController.emitEmote(emoteID);
@@ -1072,11 +1283,10 @@ export default class TownGameScene extends Phaser.Scene {
         .setOffset(0, 24);
 
       // Other player pet creation
-      const petSprite = this.add
+      const petSprite = this.physics.add
         .sprite(player.location.x - 25, player.location.y + 15, 'cat_atlas_key')
         .setScale(1.0)
-        .setDepth(6)
-        .play('cat-idle');
+        .setDepth(6);
 
       const label = this.add.text(
         player.location.x,
@@ -1096,6 +1306,7 @@ export default class TownGameScene extends Phaser.Scene {
         locationManagedByGameScene: false,
       };
       this._collidingLayers.forEach(layer => this.physics.add.collider(sprite, layer));
+      this._collidingLayers.forEach(layer => this.physics.add.collider(petSprite, layer));
     }
   }
 
