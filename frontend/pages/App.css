@@ -58,6 +58,45 @@
   flex-grow: 10;
 }
 
+.bubble-container {
+  position: fixed;
+  top: 60px;
+  right: 220px;
+  transform: translateY(-50%);
+  z-index: 900;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.bubble-container:hover {
+  transform: translateY(-50%) scale(0.95);
+}
+
+@media (max-width: 600px) {
+  .bubble-container {
+    right: 70px;
+  }
+}
+
+.emote-image {
+  width: 100px;
+  height: 100px;
+}
+
+.bubble-emote {
+  top: 60px;
+}
+
+.bubble-find {
+  top: 160px; 
+  width: 128px;
+  height: 128px;
+  border: none;
+  background: transparent;
+}
+
+
 .participant-wrapper {
   display: inline-block;
   height: 220px;

@@ -38,26 +38,6 @@ const useStyles = makeStyles((theme: Theme) =>
     hide: {
       display: 'none',
     },
-    emoteBubble: {
-      position: 'fixed',
-      top: '60px',
-      transform: 'translateY(-50%)',
-      zIndex: 900,
-      cursor: 'pointer',
-      pointerEvents: 'auto',
-      right: '270px',
-      transition: 'transform 0.15s ease, opacity 0.15s ease',
-      '&:hover': {
-        transform: 'translateY(-50%) scale(0.95)',
-      },
-      [theme.breakpoints.down('sm')]: {
-        right: '70px',
-      },
-    },
-    emoteImage: {
-      width: 100,
-      height: 100,
-    },
   }),
 );
 
@@ -141,16 +121,17 @@ export default function TownMap(): JSX.Element {
 
       <div id='map-container' />
       <div
-        className={classes.emoteBubble}
-        onClick={handleEmoteClick}
+        className="bubble-container bubble-emote"
         style={{
           opacity: isCoolingDown ? 0.5 : 1,
           pointerEvents: isCoolingDown ? 'none' : 'auto',
-        }}>
+        }}
+        onClick={handleEmoteClick}
+      >
         <img
-          src='assets/emotes/emote-bubble.png'
-          alt='Open emote menu'
-          className={classes.emoteImage}
+          src="assets/emotes/emote-bubble.png"
+          alt="Open emote menu"
+          className="emote-image"
         />
       </div>
       <FindOverlayButton />

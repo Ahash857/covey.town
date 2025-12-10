@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Image, { StaticImageData } from 'next/image';
 import findPng from '../../../../public/assets/buttons/find.png';
-import { createStyles, makeStyles, Theme } from '@material-ui/core';
 import {
   Button,
   Box,
@@ -17,30 +16,6 @@ import {
 } from '@chakra-ui/react';
 
 type Corner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
-
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    findButton: {
-      'position': 'fixed',
-      'zIndex': 900,
-      'width': 128,
-      'height': 128,
-      'transform': 'translateY(-50%)',
-      'border': 'none',
-      'pointerEvents': 'auto',
-      'cursor': 'pointer',
-      'right': '270px',
-      'top': '18%',
-      'transition': 'transform 0.15s ease, opacity 0.15s ease',
-      '&:hover': {
-        transform: 'translateY(-50%) scale(0.95)',
-      },
-      [theme.breakpoints.down('sm')]: {
-        right: '70px',
-      },
-    },
-  }),
-);
 
 export default function FindOverlayWithPanel({
   btnSize = 128,
@@ -58,7 +33,6 @@ export default function FindOverlayWithPanel({
   const closeModal = () => {
     setOpen(false);
   };
-  const classes = useStyles();
 
   useEffect(() => setMounted(true), []);
 
@@ -75,7 +49,7 @@ export default function FindOverlayWithPanel({
   return createPortal(
     <>
       {/* Fixed HUD button */}
-      <button className={classes.findButton} onClick={() => setOpen(true)}>
+      <button className="bubble-container bubble-find" onClick={() => setOpen(true)}>
         <Image
           src={findPng}
           alt='Find'
