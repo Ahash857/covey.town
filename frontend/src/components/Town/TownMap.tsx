@@ -89,7 +89,6 @@ export default function TownMap(): JSX.Element {
       <aside className={clsx(classes.chatWindowContainer, { [classes.hide]: !isChatWindowOpen })}>
         <ChatWindow />
       </aside>
-
       <div id='map-container' />
       <EmoteButton />
       <FindOverlayButton />

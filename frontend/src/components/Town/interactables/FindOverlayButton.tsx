@@ -15,6 +15,20 @@ import {
 } from '@chakra-ui/react';
 
 type Corner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+const DESTINATIONS: Record<string, { x: number; y: number }> = {
+  'Basement Dining Table 1': { x: 3005, y: 1111 },
+  'TicTacToe 1': { x: 3337, y: 1257 },
+  'TicTacToe 2': { x: 3553, y: 1056 },
+  'Connect Four 1': { x: 3005, y: 810 },
+  'Connect Four 2': { x: 3009, y: 968 },
+  'Foyer Table 1': { x: 273, y: 1102 },
+  'Foyer Table 2': { x: 480, y: 1102 },
+  'Foyer Table 3': { x: 700, y: 1102 },
+  'Foyer Table 4': { x: 938, y: 1102 },
+  'Foyer Table 5': { x: 1174, y: 1102 },
+  'Foyer Table 6': { x: 1431, y: 1102 },
+  'Foyer Table 7': { x: 1664, y: 1102 },
+};
 
 export default function FindOverlayWithPanel({
   btnSize = 128,
