@@ -11,6 +11,7 @@ import ChatWindow from '../VideoCall/VideoFrontend/components/ChatWindow/ChatWin
 import clsx from 'clsx';
 import { createStyles, makeStyles, Theme } from '@material-ui/core';
 import FindOverlayButton from './interactables/FindOverlayButton';
+import EmoteButton from './interactables/EmoteButton';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -81,36 +82,6 @@ export default function TownMap(): JSX.Element {
         game.destroy(true);
       };
     }, [coveyTownController]);
-
-      const [isCoolingDown, setIsCoolingDown] = React.useState(false);
-      //effect for bubble cooldown
-      useEffect(() => {
-        let timeout: ReturnType<typeof setTimeout> | undefined;
-
-        const onEmote = (data: { playerID: string; emoteID: string }) => {
-          if (data.playerID !== coveyTownController.userID) return;
-
-          setIsCoolingDown(true);
-
-          if (timeout) clearTimeout(timeout);
-
-          timeout = setTimeout(() => {
-            setIsCoolingDown(false);
-            timeout = undefined;
-          }, 5000);
-        };
-
-        coveyTownController.addListener('emote', onEmote);
-
-        return () => {
-          coveyTownController.removeListener('emote', onEmote);
-          if (timeout) clearTimeout(timeout);
-        };
-      }, [coveyTownController]);
-  const handleEmoteClick = () => {
-    if (isCoolingDown) return;
-    coveyTownController.toggleEmoteMenu();
-  };
   return (
     <div id='app-container'>
       <NewConversationModal />
@@ -120,20 +91,7 @@ export default function TownMap(): JSX.Element {
       </aside>
 
       <div id='map-container' />
-      <div
-        className="bubble-container bubble-emote"
-        style={{
-          opacity: isCoolingDown ? 0.5 : 1,
-          pointerEvents: isCoolingDown ? 'none' : 'auto',
-        }}
-        onClick={handleEmoteClick}
-      >
-        <img
-          src="assets/emotes/emote-bubble.png"
-          alt="Open emote menu"
-          className="emote-image"
-        />
-      </div>
+      <EmoteButton />
       <FindOverlayButton />
       <div id='social-container'>
         <SocialSidebar />

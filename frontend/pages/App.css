@@ -66,6 +66,7 @@
   z-index: 900;
   cursor: pointer;
   pointer-events: auto;
+  outline: none;
   transition: transform 0.15s ease, opacity 0.15s ease;
 }
 
