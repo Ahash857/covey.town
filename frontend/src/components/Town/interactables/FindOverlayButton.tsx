@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Image, { StaticImageData } from 'next/image';
 import findPng from '../../../../public/assets/buttons/find.png';
-import { createStyles, makeStyles, Theme } from '@material-ui/core';
 import {
   Button,
   Box,
@@ -16,46 +15,6 @@ import {
 } from '@chakra-ui/react';
 
 type Corner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
-
-//new code: list of destinations with real coordinates
-const DESTINATIONS: Record<string, { x: number; y: number }> = {
-  'Basement Dining Table 1': { x: 3005, y: 1111 },
-  'TicTacToe 1': { x: 3337, y: 1257 },
-  'TicTacToe 2': { x: 3553, y: 1056 },
-  'Connect Four 1': { x: 3005, y: 810 },
-  'Connect Four 2': { x: 3009, y: 968 },
-  'Foyer Table 1': { x: 273, y: 1102 },
-  'Foyer Table 2': { x: 480, y: 1102 },
-  'Foyer Table 3': { x: 700, y: 1102 },
-  'Foyer Table 4': { x: 938, y: 1102 },
-  'Foyer Table 5': { x: 1174, y: 1102 },
-  'Foyer Table 6': { x: 1431, y: 1102 },
-  'Foyer Table 7': { x: 1664, y: 1102 },
-};
-
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    findButton: {
-      'position': 'fixed',
-      'zIndex': 900,
-      'width': 128,
-      'height': 128,
-      'transform': 'translateY(-50%)',
-      'border': 'none',
-      'pointerEvents': 'auto',
-      'cursor': 'pointer',
-      'right': '270px',
-      'top': '18%',
-      'transition': 'transform 0.15s ease, opacity 0.15s ease',
-      '&:hover': {
-        transform: 'translateY(-50%) scale(0.95)',
-      },
-      [theme.breakpoints.down('sm')]: {
-        right: '70px',
-      },
-    },
-  }),
-);
 
 export default function FindOverlayWithPanel({
   btnSize = 128,
@@ -73,7 +32,6 @@ export default function FindOverlayWithPanel({
   const closeModal = () => {
     setOpen(false);
   };
-  const classes = useStyles();
 
   useEffect(() => setMounted(true), []);
 
@@ -100,7 +58,7 @@ export default function FindOverlayWithPanel({
   return createPortal(
     <>
       {/* Fixed HUD button */}
-      <button className={classes.findButton} onClick={() => setOpen(true)}>
+      <button className="bubble-container bubble-find" onClick={() => setOpen(true)}>
         <Image
           src={findPng}
           alt='Find'

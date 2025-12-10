@@ -90,18 +90,6 @@ export default class TownGameScene extends Phaser.Scene {
 
   private _onGameReadyListeners: Callback[] = [];
 
-  private _emoteMenuContainer?: Phaser.GameObjects.Container;
-
-  private _isEmoteMenuOpen = false;
-
-  private _emoteMenuCooldownMs = 5000; // 1 second between opens
-
-  private _lastEmoteMenuOpenTime = 0;
-
-  private _emoteMenuOffsetX = 190;
-
-  private _emoteMenuOffsetY = 110;
-
   private _activeEmotes: {
     sprite: Phaser.GameObjects.Sprite;
     bubble: Phaser.GameObjects.Image;
@@ -190,40 +178,7 @@ export default class TownGameScene extends Phaser.Scene {
       '16_Grocery_store_32x32',
       this._resourcePathPrefix + '/assets/tilesets/16_Grocery_store_32x32.png',
     );
-    this.load.image('emoteMenu', this._resourcePathPrefix + '/assets/emotes/emote-menu.png');
     this.load.image('emote-holder', this._resourcePathPrefix + '/assets/emotes/emote-holder.png');
-    this.load.image(
-      'Calling-static',
-      this._resourcePathPrefix + '/assets/emotes/Calling-static.png',
-    );
-    this.load.image(
-      'CheckMark-static',
-      this._resourcePathPrefix + '/assets/emotes/CheckMark-static.png',
-    );
-    this.load.image(
-      'LaughingFace-static',
-      this._resourcePathPrefix + '/assets/emotes/LaughingFace-static.png',
-    );
-    this.load.image(
-      'LightBulb-static',
-      this._resourcePathPrefix + '/assets/emotes/LightBulb-static.png',
-    );
-    this.load.image(
-      'MindBlown-static',
-      this._resourcePathPrefix + '/assets/emotes/MindBlown-static.png',
-    );
-    this.load.image(
-      'PartyPopper-static',
-      this._resourcePathPrefix + '/assets/emotes/PartyPopper-static.png',
-    );
-    this.load.image(
-      'ThinkingFace-static',
-      this._resourcePathPrefix + '/assets/emotes/ThinkingFace-static.png',
-    );
-    this.load.image(
-      'ThumbsUp-static',
-      this._resourcePathPrefix + '/assets/emotes/ThumbsUp-static.png',
-    );
     this.load.spritesheet(
       'Calling-spritesheet',
       this._resourcePathPrefix + '/assets/emotes/spritesheets/Calling.png',
@@ -641,17 +596,6 @@ export default class TownGameScene extends Phaser.Scene {
           }
         }
       }
-      //Update emote menu location
-      if (this._isEmoteMenuOpen && this._emoteMenuContainer) {
-        const ourPlayer = this.coveyTownController.ourPlayer;
-        const sprite = ourPlayer.gameObjects?.sprite;
-        const body = sprite?.body as Phaser.Physics.Arcade.Body | undefined;
-
-        if (body) {
-          this._emoteMenuContainer.x = body.x + this._emoteMenuOffsetX;
-          this._emoteMenuContainer.y = body.y + this._emoteMenuOffsetY;
-        }
-      }
 
       //update emote location
       for (const emote of this._activeEmotes) {
@@ -788,13 +732,16 @@ export default class TownGameScene extends Phaser.Scene {
         false,
       ) as Phaser.Types.Input.Keyboard.CursorKeys,
     );
+    // Capture presses of the "E" key to trigger an emote.
+    // The server rebroadcasts the event to every client
+    const keyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+    keyE.on('down', () => {
+      this.coveyTownController.toggleEmoteMenu();
+    });
     // Listen for emote broadcasts from the TownController and display the effect
     // above the correct player's sprite.
     this.coveyTownController.addListener('emote', data => {
-      this.showEmote(data.playerID, data.emoteID);
-    });
-    this.coveyTownController.addListener('toggleEmoteMenu', () => {
-      this.toggleEmoteMenu();
+      this._showEmote(data.playerID, data.emoteID);
     });
 
     // Create a sprite with physics enabled via the physics system. The image used for the sprite
@@ -1004,7 +951,7 @@ export default class TownGameScene extends Phaser.Scene {
 
     // Help text that has a "fixed" position on the screen
     this.add
-      .text(16, 16, `Arrow keys to move`, {
+      .text(16, this.cameras.main.height - 16, `Arrow keys to move\nE to emote`, {
         font: '18px monospace',
         color: '#000000',
         padding: {
@@ -1013,6 +960,7 @@ export default class TownGameScene extends Phaser.Scene {
         },
         backgroundColor: '#ffffff',
       })
+      .setOrigin(0, 1)
       .setScrollFactor(0)
       .setDepth(30);
 
@@ -1076,159 +1024,14 @@ export default class TownGameScene extends Phaser.Scene {
     }
   }
 
-  private applyHoverEffect = (
-    icon: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite,
-    sinkOffset = 6,
-    scaleMultiplier = 1.08,
-  ) => {
-    const baseY = icon.y;
-    const baseScaleX = icon.scaleX;
-    const baseScaleY = icon.scaleY;
-
-    icon.on('pointerover', () => {
-      this.tweens.add({
-        targets: icon,
-        y: baseY + sinkOffset,
-        scaleX: baseScaleX * scaleMultiplier,
-        scaleY: baseScaleY * scaleMultiplier,
-        duration: 120,
-        ease: 'Quad.easeOut',
-      });
-    });
-
-    icon.on('pointerout', () => {
-      this.tweens.add({
-        targets: icon,
-        y: baseY,
-        scaleX: baseScaleX,
-        scaleY: baseScaleY,
-        duration: 120,
-        ease: 'Quad.easeOut',
-      });
-    });
-  }
-
-  private toggleEmoteMenu = () => {
-    if (this._isEmoteMenuOpen) {
-      this.closeEmoteMenu();
-      return;
-    }
-
-    const now = this.time.now;
-    if (now - this._lastEmoteMenuOpenTime < this._emoteMenuCooldownMs) {
-      return;
-    }
-
-    this._lastEmoteMenuOpenTime = now;
-    this.openEmoteMenu();
-  };
-
-  private _emoteList = [
-    { id: 'Calling-spritesheet', icon: 'Calling-static' },
-    { id: 'CheckMark-spritesheet', icon: 'CheckMark-static' },
-    { id: 'LaughingFace-spritesheet', icon: 'LaughingFace-static' },
-    { id: 'LightBulb-spritesheet', icon: 'LightBulb-static' },
-    { id: 'MindBlown-spritesheet', icon: 'MindBlown-static' },
-    { id: 'PartyPopper-spritesheet', icon: 'PartyPopper-static' },
-    { id: 'ThinkingFace-spritesheet', icon: 'ThinkingFace-static' },
-    { id: 'ThumbsUp-spritesheet', icon: 'ThumbsUp-static' },
-
-  ];
-
-  private openEmoteMenu = () => {
-    this._isEmoteMenuOpen = true;
-
-    const ourPlayer = this.coveyTownController.ourPlayer;
-    const playerSprite = ourPlayer.gameObjects?.sprite;
-    if (!playerSprite) {
-      return;
-    }
-
-    const menuX = playerSprite.x + this._emoteMenuOffsetX;
-    const menuY = playerSprite.y + this._emoteMenuOffsetY;
-
-    const bg = this.add.image(0, 0, 'emoteMenu').setScale(1);
-    const container = this.add.container(menuX, menuY, [bg]).setDepth(100);
-
-    const spacingX = 60;
-    const spacingY = 70;
-    const itemsPerRow = 4;
-    const totalRows = 2;
-
-    //Maximum emote icon size
-    const TARGET_SIZE = 60;
-
-    this._emoteList.forEach((emoteDef, index) => {
-      const row = Math.floor(index / itemsPerRow);
-      const col = index % itemsPerRow;
-
-      const rowWidth = (itemsPerRow - 1) * spacingX;
-      const startX = -rowWidth / 2;
-
-      const totalHeight = (totalRows - 1) * spacingY;
-      const startY = -totalHeight / 2;
-
-      const x = startX + col * spacingX;
-      const y = startY + row * spacingY;
-
-      const icon = this.add.image(x, y, emoteDef.icon);
-
-      const width = icon.width;
-      const height = icon.height;
-      const scaleFactor = TARGET_SIZE / Math.max(width, height);
-      icon.setScale(scaleFactor);
-
-      icon.setInteractive({ useHandCursor: true });
-      this.applyHoverEffect(icon);
-
-      const baseY = y;
-
-      icon.on('pointerout', () => {
-        this.tweens.add({
-          targets: icon,
-          y: baseY,
-          scale: scaleFactor,
-          duration: 120,
-          ease: 'Quad.easeOut',
-        });
-      });
-
-      icon.on('pointerup', () => {
-        this.handleEmoteSelection(emoteDef.id);
-      });
-
-      container.add(icon);
-    });
-
-    bg.setInteractive();
-    bg.on('pointerup', () => {
-      this.closeEmoteMenu();
-    });
-
-    this._emoteMenuContainer = container;
-  };
-
-  private closeEmoteMenu = () => {
-    this._isEmoteMenuOpen = false;
-    if (this._emoteMenuContainer) {
-      this._emoteMenuContainer.destroy(true);
-      this._emoteMenuContainer = undefined;
-    }
-  };
-
-  private handleEmoteSelection = (emoteID: string) => {
-    this.coveyTownController.emitEmote(emoteID);
-    this.closeEmoteMenu();
-  }
-
-  private showEmote = (playerID: string, emoteID: string) => {
+  private _showEmote = (playerID: string, emoteID: string) => {
     const player = this.coveyTownController.getPlayer(playerID);
     if (!player.gameObjects) return;
 
     const playerSprite = player.gameObjects.sprite;
     const body = playerSprite.body as Phaser.Physics.Arcade.Body | undefined;
     if (!body) return;
-
+  
     const offsetX = 90;
     const offsetY = -70;
 
@@ -1247,12 +1050,12 @@ export default class TownGameScene extends Phaser.Scene {
       .sprite(centerX + offsetX + emoteOffsetX, centerY + offsetY + emoteOffsetY, emoteID, 0)
       .setDepth(50);
 
-    const MAX_EMOTE_SIZE = 100;
+    const maxEmoteSize = 100;
 
     const frameWidth = emoteSprite.width;
     const frameHeight = emoteSprite.height;
 
-    const scaleFactor = MAX_EMOTE_SIZE / Math.max(frameWidth, frameHeight);
+    const scaleFactor = maxEmoteSize / Math.max(frameWidth, frameHeight);
     emoteSprite.setScale(scaleFactor);
 
     const animKey = this._emoteAnimations[emoteID];

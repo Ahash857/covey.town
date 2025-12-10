@@ -11,6 +11,7 @@ import ChatWindow from '../VideoCall/VideoFrontend/components/ChatWindow/ChatWin
 import clsx from 'clsx';
 import { createStyles, makeStyles, Theme } from '@material-ui/core';
 import FindOverlayButton from './interactables/FindOverlayButton';
+import EmoteButton from './interactables/EmoteButton';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -38,26 +39,6 @@ const useStyles = makeStyles((theme: Theme) =>
     hide: {
       display: 'none',
     },
-    emoteBubble: {
-      'position': 'fixed',
-      'top': '10%',
-      'transform': 'translateY(-50%)',
-      'zIndex': 900,
-      'cursor': 'pointer',
-      'pointerEvents': 'auto',
-      'right': '270px',
-      'transition': 'transform 0.15s ease, opacity 0.15s ease',
-      '&:hover': {
-        transform: 'translateY(-50%) scale(0.95)',
-      },
-      [theme.breakpoints.down('sm')]: {
-        right: '70px',
-      },
-    },
-    emoteImage: {
-      width: 100,
-      height: 100,
-    },
   }),
 );
 
@@ -66,50 +47,41 @@ export default function TownMap(): JSX.Element {
   const { isChatWindowOpen } = useChatContext();
   const classes = useStyles();
 
-  useEffect(() => {
-    const config = {
-      type: Phaser.AUTO,
-      backgroundColor: '#000000',
-      parent: 'map-container',
-      render: { pixelArt: true, powerPreference: 'high-performance' },
-      scale: {
-        expandParent: false,
-        mode: Phaser.Scale.ScaleModes.WIDTH_CONTROLS_HEIGHT,
-        autoRound: true,
-      },
-      width: 800,
-      height: 600,
-      fps: { target: 30 },
-      physics: {
-        default: 'arcade',
-        arcade: {
-          gravity: { y: 0 }, // Top down game, so no gravity
+    useEffect(() => {
+      const config = {
+        type: Phaser.AUTO,
+        backgroundColor: '#000000',
+        parent: 'map-container',
+        render: { pixelArt: true, powerPreference: 'high-performance' },
+        scale: {
+          expandParent: false,
+          mode: Phaser.Scale.ScaleModes.WIDTH_CONTROLS_HEIGHT,
+          autoRound: true,
         },
-      },
-    };
+        width: 800,
+        height: 600,
+        fps: { target: 30 },
+        physics: {
+          default: 'arcade',
+          arcade: {
+            gravity: { y: 0 }, // Top down game, so no gravity
+          },
+        },
+      };
 
-    const game = new Phaser.Game(config);
-    const newGameScene = new TownGameScene(coveyTownController);
-    game.scene.add('coveyBoard', newGameScene, true);
-    const pauseListener = newGameScene.pause.bind(newGameScene);
-    const unPauseListener = newGameScene.resume.bind(newGameScene);
-    coveyTownController.addListener('pause', pauseListener);
-    coveyTownController.addListener('unPause', unPauseListener);
-    return () => {
-      coveyTownController.removeListener('pause', pauseListener);
-      coveyTownController.removeListener('unPause', unPauseListener);
-      game.destroy(true);
-    };
-  }, [coveyTownController]);
-  const [isCoolingDown, setIsCoolingDown] = React.useState(false);
-  const handleEmoteClick = () => {
-    if (isCoolingDown) return;
-
-    coveyTownController.toggleEmoteMenu();
-
-    setIsCoolingDown(true);
-    setTimeout(() => setIsCoolingDown(false), 5000);
-  };
+      const game = new Phaser.Game(config);
+      const newGameScene = new TownGameScene(coveyTownController);
+      game.scene.add('coveyBoard', newGameScene, true);
+      const pauseListener = newGameScene.pause.bind(newGameScene);
+      const unPauseListener = newGameScene.resume.bind(newGameScene);
+      coveyTownController.addListener('pause', pauseListener);
+      coveyTownController.addListener('unPause', unPauseListener);
+      return () => {
+        coveyTownController.removeListener('pause', pauseListener);
+        coveyTownController.removeListener('unPause', unPauseListener);
+        game.destroy(true);
+      };
+    }, [coveyTownController]);
   return (
     <div id='app-container'>
       <NewConversationModal />
@@ -119,19 +91,7 @@ export default function TownMap(): JSX.Element {
       </aside>
 
       <div id='map-container' />
-      <div
-        className={classes.emoteBubble}
-        onClick={handleEmoteClick}
-        style={{
-          opacity: isCoolingDown ? 0.5 : 1,
-          pointerEvents: isCoolingDown ? 'none' : 'auto',
-        }}>
-        <img
-          src='assets/emotes/emote-bubble.png'
-          alt='Open emote menu'
-          className={classes.emoteImage}
-        />
-      </div>
+      <EmoteButton />
       <FindOverlayButton />
       <div id='social-container'>
         <SocialSidebar />
