@@ -35,15 +35,11 @@ const STAIRS_TO_BASEMENT = { x: 2959, y: 1219 };
 // 2. Walk your player to the arrows in the Basement. Check console. Update these X/Y.
 const STAIRS_TO_LOBBY = { x: 2493, y: 1220 };
 
-// 3. The Y coordinate that separates the Lobby (top) from Basement (bottom).
-// Usually around 600-800 depending on the map.
-const MAP_SPLIT_Y = 1000;
-
 // 4. Coords to identify the main lobby
-const X_A = 2950;
-const Y_A = 744;
-const X_B = 3730;
-const Y_B = 1280;
+const X_A = 2930;
+const Y_A = 640;
+const X_B = 3731;
+const Y_B = 1281;
 
 // Building min and max to be safe
 const MIN_X = Math.min(X_A, X_B);
@@ -442,7 +438,7 @@ export default class TownGameScene extends Phaser.Scene {
             gameObjects.petSprite.anims.play('cat-walk-back', true);
           }
           break;
-        default:
+        default: {
           // Not moving
           gameObjects.sprite.anims.stop();
           // If we were moving, pick and idle frame to use
@@ -452,14 +448,30 @@ export default class TownGameScene extends Phaser.Scene {
             gameObjects.sprite.setTexture('atlas', 'misa-right');
           } else if (prevVelocity.y < 0) {
             gameObjects.sprite.setTexture('atlas', 'misa-back');
-          } else if (prevVelocity.y > 0) gameObjects.sprite.setTexture('atlas', 'misa-front');
+          } else if (prevVelocity.y > 0) {
+            gameObjects.sprite.setTexture('atlas', 'misa-front');
+          }
 
           // Start pet idle animation
+          const misaTextureMovement = gameObjects.sprite.frame.name;
+
           if (gameObjects.petSprite) {
-            gameObjects.petSprite.anims.play('cat-idle', true);
+            if (misaTextureMovement.includes('left')) {
+              gameObjects.petSprite.setTexture('cat_atlas_key', 'cat-left-1');
+            }
+            if (misaTextureMovement.includes('right')) {
+              gameObjects.petSprite.setTexture('cat_atlas_key', 'cat-right-1');
+            }
+            if (misaTextureMovement.includes('back')) {
+              gameObjects.petSprite.setTexture('cat_atlas_key', 'cat-back-1');
+            }
+            if (misaTextureMovement.includes('front')) {
+              gameObjects.petSprite.setTexture('cat_atlas_key', 'cat-front-1');
+            }
           }
 
           break;
+        }
       }
 
       // Normalize and scale the velocity so that player can't move faster along a diagonal
@@ -500,7 +512,7 @@ export default class TownGameScene extends Phaser.Scene {
 
           //new code: debug log distance
           if (Math.random() < 0.05) {
-             console.log(`Distance to target: ${Math.floor(distanceToTarget)}`);
+            console.log(`Distance to target: ${Math.floor(distanceToTarget)}`);
           }
 
           //new code: stop guiding if close (150px)
@@ -598,7 +610,7 @@ export default class TownGameScene extends Phaser.Scene {
             if (!player.location.moving) {
               player.gameObjects.petSprite.anims.play('cat-idle', true);
             } else {
-              // Player is moving: Play the corresponding directional walk animation.
+              //Player is moving: Play the corresponding directional walk animation.
               const petAnimKey = `cat-walk-${player.location.rotation}`;
               player.gameObjects.petSprite.anims.play(petAnimKey, true);
             }
