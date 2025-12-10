@@ -540,11 +540,27 @@ export default class TownGameScene extends Phaser.Scene {
             const currentPetX = gameObjects.petSprite.x;
             const currentPetY = gameObjects.petSprite.y;
 
-            petTargetX = Phaser.Math.Linear(currentPetX, targetLeadX, 0.1);
-            petTargetY = Phaser.Math.Linear(currentPetY, targetLeadY, 0.1);
+            petTargetX = Phaser.Math.Linear(currentPetX, targetLeadX, 0.12);
+            petTargetY = Phaser.Math.Linear(currentPetY, targetLeadY, 0.12);
 
-            if (dx < 0) gameObjects.petSprite.anims.play('cat-walk-left', true);
-            else gameObjects.petSprite.anims.play('cat-walk-right', true);
+            const prevPetX = gameObjects.petSprite.x;
+            const prevPetY = gameObjects.petSprite.y;
+
+            const mvxc = petTargetX - prevPetX;
+            const mvyc = petTargetY - prevPetY;
+            const speedc = Math.hypot(mvxc, mvyc);
+            if (speedc < 1.5) {
+              gameObjects.petSprite.anims.play('cat-idle', true);
+            } else {
+              // choose direction while returning
+              if (Math.abs(mvxc) >= Math.abs(mvyc)) {
+                if (mvxc < 0) gameObjects.petSprite.anims.play('cat-walk-left', true);
+                else gameObjects.petSprite.anims.play('cat-walk-right', true);
+              } else {
+                if (mvyc < 0) gameObjects.petSprite.anims.play('cat-walk-back', true);
+                else gameObjects.petSprite.anims.play('cat-walk-front', true);
+              }
+            }
           }
         }
 
