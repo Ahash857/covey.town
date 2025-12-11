@@ -90,6 +90,8 @@ export default class TownGameScene extends Phaser.Scene {
 
   private _onGameReadyListeners: Callback[] = [];
 
+  private _popupCooldowns: Map<string, number> = new Map();
+
   private _activeEmotes: {
     sprite: Phaser.GameObjects.Sprite;
     bubble: Phaser.GameObjects.Image;
@@ -995,11 +997,29 @@ export default class TownGameScene extends Phaser.Scene {
   }
 
   //new code: show popup message
-  private _showPopup(message: string) {
+  private _showPopup(
+    message: string,
+    key?: string,
+    opts?: { cooldownMs?: number; holdMs?: number },
+  ) {
     if (!this.sys || !this.sys.isActive()) return;
 
     const gameObjects = this.coveyTownController.ourPlayer.gameObjects;
     if (!gameObjects || !gameObjects.petSprite) return;
+    const dedupeKey = key ?? message;
+    const cooldownMs = opts?.cooldownMs ?? 3000; // default: 3s cooldown per key
+    const holdMs = opts?.holdMs ?? 1200; // how long it stays visible between entrance and fade
+
+    const petY = gameObjects.petSprite.y - 40;
+    const petX = gameObjects.petSprite.x;
+
+    const now = Date.now();
+    const last = this._popupCooldowns.get(dedupeKey) ?? 0;
+    if (now - last < cooldownMs) {
+      // still cooling down — avoid spamming
+      return;
+    }
+    this._popupCooldowns.set(dedupeKey, now);
 
     try {
       const text = this.add
@@ -1011,13 +1031,26 @@ export default class TownGameScene extends Phaser.Scene {
         })
         .setDepth(100)
         .setOrigin(0.5);
-
       this.tweens.add({
         targets: text,
-        y: text.y - 30, // Float up
-        alpha: 0,
-        duration: 2000,
-        onComplete: () => text.destroy(),
+        y: petY - 20,
+        duration: 300,
+        ease: 'Cubic.Out',
+        onComplete: () => {
+          // 2) hold using a delayed call
+          this.time.delayedCall(holdMs, () => {
+            // 3) fast fade + slight upward movement
+            this.tweens.add({
+              targets: text,
+              y: petY - 40,
+              alpha: 0,
+              duration: 300,
+              onComplete: () => {
+                text.destroy();
+              },
+            });
+          });
+        },
       });
     } catch (err) {
       console.warn('Could not show popup, scene might be destroying', err);
@@ -1031,7 +1064,7 @@ export default class TownGameScene extends Phaser.Scene {
     const playerSprite = player.gameObjects.sprite;
     const body = playerSprite.body as Phaser.Physics.Arcade.Body | undefined;
     if (!body) return;
-  
+
     const offsetX = 90;
     const offsetY = -70;
 
