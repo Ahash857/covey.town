@@ -26,14 +26,12 @@ function interactableTypeForObjectType(type: string): any {
   }
 }
 
-// -----------------------------------------------------------
-// NEW CODE: WAYPOINT COORDINATES (YOU MUST UPDATE THESE!)
-// -----------------------------------------------------------
+// waypoint coordinates
 // 1. Walk your player to the arrows in the Lobby. Check console. Update these X/Y.
-const STAIRS_TO_BASEMENT = { x: 2959, y: 1219 };
+const stairsToBasement = { x: 2959, y: 1219 };
 
 // 2. Walk your player to the arrows in the Basement. Check console. Update these X/Y.
-const STAIRS_TO_LOBBY = { x: 2493, y: 1220 };
+const stairsToLobby = { x: 2493, y: 1220 };
 
 // 4. Coords to identify the main lobby
 const X_A = 2930;
@@ -48,7 +46,7 @@ const MIN_Y = Math.min(Y_A, Y_B);
 const MAX_Y = Math.max(Y_A, Y_B);
 
 // Main lobby rectangle
-const lobbyRect = new Phaser.Geom.Rectangle(MIN_X, MIN_Y, MAX_X - MIN_X, MAX_Y - MIN_Y);
+export const lobbyRect = new Phaser.Geom.Rectangle(MIN_X, MIN_Y, MAX_X - MIN_X, MAX_Y - MIN_Y);
 
 // -----------------------------------------------------------
 
@@ -69,8 +67,9 @@ export default class TownGameScene extends Phaser.Scene {
 
   private _cursorKeys?: Phaser.Types.Input.Keyboard.CursorKeys;
 
-  //new code: guide variables
+  //guide variables
   private _guideTarget?: { x: number; y: number };
+
   private _isGuiding = false;
 
   /*
@@ -328,15 +327,13 @@ export default class TownGameScene extends Phaser.Scene {
     this.coveyTownController.emitMovement(this._lastLocation);
   }
 
-  // ---------------------------------------------------
-  // NEW CODE: HELPER TO DETERMINE ROOM BASED ON Y POS
-  // ---------------------------------------------------
+  // helper to determine room based on lobby's coordinates
   private _isPlayerUpStairs(playerX: number, playerY: number): boolean {
     return lobbyRect.contains(playerX, playerY);
   }
 
   update() {
-    //new code: log my current position to console
+    //log my current position to console
     const mySprite = this.coveyTownController.ourPlayer.gameObjects?.sprite;
     if (mySprite) {
       if (Math.floor(this.time.now) % 1500 < 20) {
@@ -434,7 +431,7 @@ export default class TownGameScene extends Phaser.Scene {
       gameObjects.sprite.body.velocity.normalize().scale(MOVEMENT_SPEED);
 
       if (gameObjects.petSprite) {
-        //new code: pet guiding logic
+        //pet guiding logic
         let petTargetX = gameObjects.sprite.getBounds().centerX - 25;
         let petTargetY = gameObjects.sprite.getBounds().centerY + 15;
 
@@ -442,9 +439,7 @@ export default class TownGameScene extends Phaser.Scene {
           const playerX = gameObjects.sprite.body.x;
           const playerY = gameObjects.sprite.body.y;
 
-          // ---------------------------------------------------
-          // NEW CODE: WAYPOINT NAVIGATION LOGIC
-          // ---------------------------------------------------
+          // wapoint navigation logic
           let effectiveTarget = this._guideTarget;
 
           const playerRoom = this._isPlayerUpStairs(playerX, playerY);
@@ -453,11 +448,11 @@ export default class TownGameScene extends Phaser.Scene {
           // If we are in different rooms, target the stairs first!
           if (playerRoom !== destinationRoom) {
             if (playerRoom) {
-              effectiveTarget = STAIRS_TO_BASEMENT;
+              effectiveTarget = stairsToBasement;
               // Optional: Only log occasionally to avoid spam
               if (Math.random() < 0.01) console.log('Directing to Basement Stairs');
             } else {
-              effectiveTarget = STAIRS_TO_LOBBY;
+              effectiveTarget = stairsToLobby;
               if (Math.random() < 0.01) console.log('Directing to Lobby Stairs');
             }
           }
@@ -466,12 +461,12 @@ export default class TownGameScene extends Phaser.Scene {
           const dy = effectiveTarget.y - playerY;
           const distanceToTarget = Math.sqrt(dx * dx + dy * dy);
 
-          //new code: debug log distance
+          //debug log distance
           if (Math.random() < 0.05) {
             console.log(`Distance to target: ${Math.floor(distanceToTarget)}`);
           }
 
-          //new code: stop guiding if close (150px)
+          //stop guiding if close (150px)
           if (distanceToTarget < 150) {
             // If we reached the waypont (Stairs), don't stop guiding!
             // Only stop if we reached the REAL target.
@@ -485,7 +480,7 @@ export default class TownGameScene extends Phaser.Scene {
               if (Math.random() < 0.05) this._showPopup('Go through here!');
             }
           } else {
-            //new code: calculate carrot on stick position
+            //calculate carrot on stick position
             const leadDistance = 100;
             const unitX = dx / distanceToTarget;
             const unitY = dy / distanceToTarget;
@@ -564,7 +559,7 @@ export default class TownGameScene extends Phaser.Scene {
 
       //Update the location for the labels of all of the other players
       for (const player of this._players) {
-        //new code: skip my own player so guide works
+        //skip my own player so guide works
         if (player === this.coveyTownController.ourPlayer) {
           continue;
         }
@@ -602,7 +597,7 @@ export default class TownGameScene extends Phaser.Scene {
       //update emote location
       for (const emote of this._activeEmotes) {
         const playerSprite = emote.player.gameObjects?.sprite;
-        const body = playerSprite?.body as Phaser.Physics.Arcade.Body | undefined;
+        //const body = playerSprite?.body as Phaser.Physics.Arcade.Body | undefined;
         if (!playerSprite || !body || !emote.sprite.active) {
           continue;
         }
@@ -610,11 +605,11 @@ export default class TownGameScene extends Phaser.Scene {
         const centerX = body.x + body.width / 2;
         const centerY = body.y + body.height / 2;
 
-        const x = centerX + emote.offsetX;
-        const y = centerY + emote.offsetY;
+        const xE = centerX + emote.offsetX;
+        const yE = centerY + emote.offsetY;
 
-        emote.bubble.setPosition(x, y);
-        emote.sprite.setPosition(x + emote.emoteOffsetX, y + emote.emoteOffsetY);
+        emote.bubble.setPosition(xE, yE);
+        emote.sprite.setPosition(xE + emote.emoteOffsetX, yE + emote.emoteOffsetY);
       }
     }
   }
@@ -973,9 +968,9 @@ export default class TownGameScene extends Phaser.Scene {
     this._onGameReadyListeners = [];
     this.coveyTownController.addListener('playersChanged', players => this.updatePlayers(players));
 
-    //new code: event listener setup
+    //event listener setup
     const guideHandler = (e: any) => {
-      //new code: zombie check to avoid crashes
+      //zombie check to avoid crashes
       if (!this.sys || !this.sys.isActive()) return;
 
       const coords = e.detail;
@@ -990,13 +985,13 @@ export default class TownGameScene extends Phaser.Scene {
 
     window.addEventListener('pet-guide-to', guideHandler);
 
-    //new code: remove listener when scene is destroyed
+    //remove listener when scene is destroyed
     this.events.once(Phaser.Scenes.Events.DESTROY, () => {
       window.removeEventListener('pet-guide-to', guideHandler);
     });
   }
 
-  //new code: show popup message
+  //show popup message
   private _showPopup(
     message: string,
     key?: string,
@@ -1011,7 +1006,6 @@ export default class TownGameScene extends Phaser.Scene {
     const holdMs = opts?.holdMs ?? 1200; // how long it stays visible between entrance and fade
 
     const petY = gameObjects.petSprite.y - 40;
-    const petX = gameObjects.petSprite.x;
 
     const now = Date.now();
     const last = this._popupCooldowns.get(dedupeKey) ?? 0;

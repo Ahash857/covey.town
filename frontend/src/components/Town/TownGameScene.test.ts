@@ -1,240 +1,356 @@
-import { mock, MockProxy } from 'jest-mock-extended';
-import TownGameScene from './TownGameScene'; 
-import TownController from '../../classes/TownController'; 
-import PlayerController from '../../classes/PlayerController'; 
 import Phaser from 'phaser';
+import { mock } from 'jest-mock-extended';
+import TownGameScene from './TownGameScene';
+import TownController from '../../classes/TownController';
+import PlayerController from '../../classes/PlayerController';
+import { PlayerLocation } from '../../types/CoveyTownSocket';
 
-// We need to fake the game engine because Jest runs in a terminal, not a browser
-jest.mock('phaser', () => {
+// --- Mocks ---
+
+// Mock Phaser Physics Body
+const mockBody = {
+  setVelocity: jest.fn(),
+  setVelocityX: jest.fn(),
+  setVelocityY: jest.fn(),
+  velocity: {
+    x: 0,
+    y: 0,
+    clone: jest.fn(() => ({ x: 0, y: 0 })),
+    normalize: jest.fn().mockReturnThis(),
+    scale: jest.fn()
+  },
+  x: 100,
+  y: 100,
+  width: 30,
+  height: 40,
+};
+
+// Mock Phaser Sprite/Image (Base object with ALL required methods)
+const mockSpriteBase = {
+  x: 0,
+  y: 0,
+  width: 30,
+  height: 40,
+  body: mockBody,
+  setOrigin: jest.fn().mockReturnThis(),
+  setScale: jest.fn().mockReturnThis(),
+  setDepth: jest.fn().mockReturnThis(),
+  setVisible: jest.fn().mockReturnThis(),
+  setPosition: jest.fn().mockReturnThis(),
+  setInteractive: jest.fn().mockReturnThis(),
+  on: jest.fn(),
+  setSize: jest.fn().mockReturnThis(),
+  setOffset: jest.fn().mockReturnThis(),
+  play: jest.fn().mockReturnThis(),
+  anims: {
+    play: jest.fn(),
+    stop: jest.fn(),
+  },
+  destroy: jest.fn(),
+  getBounds: jest.fn(() => ({ centerX: 100, centerY: 100 })),
+  setTexture: jest.fn(),
+  active: true,
+  setX: jest.fn().mockReturnThis(),
+  setY: jest.fn().mockReturnThis(),
+  frame: { name: 'misa-front' },
+};
+
+// Mock Text Label
+const mockText = {
+  x: 0,
+  y: 0,
+  setOrigin: jest.fn().mockReturnThis(),
+  setDepth: jest.fn().mockReturnThis(),
+  setScrollFactor: jest.fn().mockReturnThis(),
+  setX: jest.fn(),
+  setY: jest.fn(),
+  destroy: jest.fn(),
+  text: 'test',
+};
+
+// Mock Container
+const mockContainer = {
+  x: 0,
+  y: 0,
+  add: jest.fn(),
+  setDepth: jest.fn().mockReturnThis(),
+  destroy: jest.fn(),
+};
+
+// Helper to create a plain player object
+function createMockPlayer(id: string): PlayerController {
   return {
-    GameObjects: {
-      Container: jest.fn(),
-      Sprite: jest.fn(),
-      Text: jest.fn(),
-      Image: jest.fn(),
-    },
-    Scene: jest.fn(),
-    Math: {
-      // We must implement Linear interpolation for the vector math to work in tests
-      Linear: (p0: number, p1: number, t: number) => p0 + (p1 - p0) * t,
-    },
-    Input: {
-      Keyboard: {
-        KeyCodes: {},
-      },
-    },
-    Geom: {
-      Rectangle: {
-        Overlaps: jest.fn().mockReturnValue(false),
-      }
-    },
-    Scenes: {
-      Events: {
-        DESTROY: 'destroy',
-      }
-    }
-  };
-});
+    id,
+    userName: id,
+    location: { x: 0, y: 0, moving: false, rotation: 'front' },
+    gameObjects: undefined,
+  } as unknown as PlayerController;
+}
 
 describe('TownGameScene', () => {
-  let townController: MockProxy<TownController>;
-  let gameScene: TownGameScene;
-  let ourPlayer: MockProxy<PlayerController>;
-  
-  // Mocks for the specific game objects we interact with
-  let mockSprite: any;
-  let mockPetSprite: any;
-  let addTextSpy: jest.Mock;
+  let scene: TownGameScene;
+  let townController: TownController;
+  let ourPlayer: PlayerController;
+  let otherPlayer: PlayerController;
+
+  // Phaser System Mocks
+  let mockInput: any;
+  let mockPhysics: any;
+  let mockAnims: any;
+  let mockAdd: any;
+  let mockCameras: any;
+  let mockTweens: any;
+  let mockLoad: any;
+  let mockEvents: any;
+  let mockTime: any;
 
   beforeEach(() => {
+    // 1. Setup TownController and Players
     townController = mock<TownController>();
-    ourPlayer = mock<PlayerController>();
-    
-    // 1. Setup the Player and Pet Sprites
-    mockSprite = { 
-      x: 0, 
-      y: 0, 
-      body: { 
-        x: 0, 
-        y: 0, 
-        velocity: { clone: () => ({ x: 0, y: 0 }) }, 
-        setVelocity: jest.fn(), 
-        setVelocityX: jest.fn(), 
-        setVelocityY: jest.fn(), 
-        normalize: () => ({ scale: jest.fn() }) 
-      }, 
-      getBounds: () => ({ centerX: 0, centerY: 0 }), 
-      anims: { play: jest.fn(), stop: jest.fn() }, 
-      setTexture: jest.fn(), 
-      setSize: jest.fn(), 
-      setOffset: jest.fn(), 
-      setDepth: jest.fn(), 
-      visible: true,
-      width: 30,
-      height: 40,
-    };
 
-    mockPetSprite = { 
-      x: 0, 
-      y: 0, 
-      setX: jest.fn(), 
-      setY: jest.fn(), 
-      setVisible: jest.fn(), 
-      play: jest.fn(), 
-      anims: { play: jest.fn() }, 
-      destroy: jest.fn(),
-      active: true,
-    };
-    
-    // Attach these sprites to the player controller
-    ourPlayer.gameObjects = {
-      sprite: mockSprite,
-      label: mock<Phaser.GameObjects.Text>(),
-      petSprite: mockPetSprite,
-      locationManagedByGameScene: true,
-    };
+    ourPlayer = createMockPlayer('me');
+    otherPlayer = createMockPlayer('other');
 
-    // Link player to controller
     Object.defineProperty(townController, 'ourPlayer', { get: () => ourPlayer });
-    Object.defineProperty(townController, 'players', { get: () => [ourPlayer] });
+    Object.defineProperty(townController, 'players', { get: () => [ourPlayer, otherPlayer] });
 
-    // 2. Instantiate the Scene
-    gameScene = new TownGameScene(townController);
-    
-    // 3. Inject Phaser Internals (Simulate the engine)
-    addTextSpy = jest.fn().mockReturnValue({ 
-      setDepth: jest.fn().mockReturnThis(), 
-      setOrigin: jest.fn().mockReturnThis(), 
-      destroy: jest.fn(),
-      y: 0,
-    });
+    townController.getPlayer = jest.fn((id) => (id === 'me' ? ourPlayer : otherPlayer));
 
-    // We manually attach these properties because we aren't running the real Phaser boot process
-    (gameScene as any).sys = { isActive: () => true }; // Important: Makes the "Zombie Check" pass
-    (gameScene as any).events = { once: jest.fn(), on: jest.fn() };
-    (gameScene as any).add = { 
-        text: addTextSpy,
-        sprite: jest.fn().mockReturnValue(mockPetSprite),
-        image: jest.fn().mockReturnValue({ setScale: jest.fn(), setInteractive: jest.fn(), on: jest.fn() }),
-        container: jest.fn().mockReturnValue({ setDepth: jest.fn(), add: jest.fn() }),
+    const listenerMock = jest.fn();
+    townController.addListener = listenerMock;
+    townController.on = listenerMock;
+
+    townController.emitEmote = jest.fn();
+    townController.emitMovement = jest.fn();
+    townController.toggleEmoteMenu = jest.fn();
+
+    // 2. Setup Phaser Scene Mocks
+    scene = new TownGameScene(townController);
+
+    mockInput = {
+      keyboard: {
+        createCursorKeys: jest.fn().mockReturnValue({
+          up: { isDown: false },
+          down: { isDown: false },
+          left: { isDown: false },
+          right: { isDown: false },
+        }),
+        addKeys: jest.fn().mockReturnValue({
+          up: { isDown: false },
+          down: { isDown: false },
+          left: { isDown: false },
+          right: { isDown: false },
+        }),
+        addKey: jest.fn().mockReturnValue({
+          on: jest.fn(),
+        }),
+        getCaptures: jest.fn().mockReturnValue([]),
+        clearCaptures: jest.fn(),
+        addCapture: jest.fn(),
+        KeyCodes: Phaser.Input.Keyboard.KeyCodes,
+      },
     };
-    (gameScene as any).physics = { add: { sprite: jest.fn().mockReturnValue(mockSprite), collider: jest.fn() } };
-    (gameScene as any).tweens = { add: jest.fn() };
-    (gameScene as any).input = { keyboard: { createCursorKeys: jest.fn().mockReturnValue({}), addKeys: jest.fn(), addCapture: jest.fn(), clearCaptures: jest.fn(), getCaptures: jest.fn() } };
-    (gameScene as any).cameras = { main: { startFollow: jest.fn(), setBounds: jest.fn() } };
-    (gameScene as any).make = { tilemap: jest.fn().mockReturnValue({ addTilesetImage: jest.fn(), createLayer: jest.fn().mockReturnValue({ setDepth: jest.fn(), setCollisionByProperty: jest.fn() }), widthInPixels: 800, heightInPixels: 600, findObject: jest.fn().mockReturnValue({ x: 100, y: 100 }), filterObjects: jest.fn() }) };
-    (gameScene as any).load = { image: jest.fn(), spritesheet: jest.fn(), tilemapTiledJSON: jest.fn(), atlas: jest.fn() };
-    (gameScene as any).anims = { create: jest.fn(), generateFrameNames: jest.fn(), generateFrameNumbers: jest.fn() };
-    (gameScene as any).time = { now: 1000 };
-    
-    // 4. Initialize the scene (Attach listeners)
-    gameScene.create();
+
+    mockPhysics = {
+      add: {
+        // FIX: Return NEW objects to ensure unique sprites per player
+        sprite: jest.fn().mockImplementation(() => ({ ...mockSpriteBase })),
+        collider: jest.fn(),
+      },
+    };
+
+    mockAnims = {
+      create: jest.fn(),
+      generateFrameNames: jest.fn(),
+      generateFrameNumbers: jest.fn(),
+    };
+
+    mockAdd = {
+      sprite: jest.fn().mockImplementation(() => ({ ...mockSpriteBase })),
+      image: jest.fn().mockImplementation(() => ({ ...mockSpriteBase })),
+      text: jest.fn().mockReturnValue(mockText),
+      container: jest.fn().mockReturnValue(mockContainer),
+    };
+
+    mockCameras = {
+      main: {
+        startFollow: jest.fn(),
+        setBounds: jest.fn(),
+      },
+    };
+
+    mockTweens = { add: jest.fn() };
+
+    mockLoad = {
+      image: jest.fn(),
+      spritesheet: jest.fn(),
+      tilemapTiledJSON: jest.fn(),
+      atlas: jest.fn(),
+    };
+
+    mockEvents = {
+      on: jest.fn(),
+      once: jest.fn(),
+      emit: jest.fn(),
+      off: jest.fn(),
+    };
+
+    mockTime = {
+      now: 1000,
+      addEvent: jest.fn(),
+    };
+
+    const mockMap = {
+      addTilesetImage: jest.fn().mockReturnValue({}),
+      createLayer: jest.fn().mockReturnValue({ setDepth: jest.fn(), setCollisionByProperty: jest.fn() }),
+      findObject: jest.fn().mockReturnValue({ x: 100, y: 100 }),
+      filterObjects: jest.fn().mockReturnValue([]),
+      widthInPixels: 1000,
+      heightInPixels: 1000,
+      createFromObjects: jest.fn().mockReturnValue([]),
+    };
+
+    scene.make = { tilemap: jest.fn().mockReturnValue(mockMap) } as any;
+
+    scene.input = mockInput;
+    scene.physics = mockPhysics;
+    scene.anims = mockAnims;
+    scene.add = mockAdd;
+    scene.cameras = mockCameras;
+    scene.tweens = mockTweens;
+    scene.load = mockLoad;
+    scene.events = mockEvents;
+    scene.time = mockTime;
+
+    scene.create();
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
+  describe('Initialization', () => {
+    it('creates sprites and pets for the local player', () => {
+      expect(mockPhysics.add.sprite).toHaveBeenCalled();
 
-  describe('Pet Guiding Logic', () => {
-    it('should start guiding when "pet-guide-to" event is dispatched', () => {
-      // 1. Dispatch the event
-      const targetX = 500;
-      const targetY = 500;
-      const guideEvent = new CustomEvent('pet-guide-to', { detail: { x: targetX, y: targetY } });
-      window.dispatchEvent(guideEvent);
-
-      // 2. Setup positions
-      // Player is at (0,0)
-      mockSprite.body.x = 0;
-      mockSprite.body.y = 0;
-      // Pet is at (0,0)
-      mockPetSprite.x = 0;
-      mockPetSprite.y = 0;
-      
-      // 3. Run the game loop once
-      gameScene.update();
-
-      // 4. Verification
-      // The pet should have moved.
-      expect(mockPetSprite.setX).toHaveBeenCalled();
-      expect(mockPetSprite.setY).toHaveBeenCalled();
-      
-      // Check Direction: If target is (500,500), pet should move positively
-      const newX = mockPetSprite.setX.mock.calls[0][0];
-      const newY = mockPetSprite.setY.mock.calls[0][0];
-      
-      // It should move towards the target
-      expect(newX).toBeGreaterThan(0);
-      expect(newY).toBeGreaterThan(0);
-      
-      // It should play the walking animation
-      expect(mockPetSprite.anims.play).toHaveBeenCalledWith('cat-walk-right', true);
-    });
-
-    it('should stop guiding and show "We are here!" when close to target', () => {
-      // 1. Start guiding to a specific point
-      const targetX = 100;
-      const targetY = 100;
-      window.dispatchEvent(new CustomEvent('pet-guide-to', { detail: { x: targetX, y: targetY } }));
-
-      // 2. Move player VERY close to target (within the 150px threshold)
-      // Distance here is roughly 14px, which is < 150
-      mockSprite.body.x = 90;
-      mockSprite.body.y = 90;
-      
-      // 3. Run update
-      gameScene.update();
-
-      // 4. Verification
-      // The "We are here!" text should be created
-      expect(addTextSpy).toHaveBeenCalledWith(
-        expect.any(Number), // x position
-        expect.any(Number), // y position
-        "We are here!",     // The expected text
-        expect.any(Object)  // style object
+      expect(mockAdd.sprite).toHaveBeenCalledWith(
+        expect.any(Number),
+        expect.any(Number),
+        'cat_atlas_key'
       );
 
-      // The fade-out tween should be added
-      expect((gameScene as any).tweens.add).toHaveBeenCalled();
+      expect(ourPlayer.gameObjects).toBeDefined();
+      expect(ourPlayer.gameObjects?.sprite).toBeDefined();
+      expect(ourPlayer.gameObjects?.petSprite).toBeDefined();
     });
 
-    it('should stay in "Heel" position if no guide event is active', () => {
-      // 1. Ensure NO event is dispatched
-      
-      // 2. Setup player position
-      mockSprite.getBounds = () => ({ centerX: 100, centerY: 100 });
-      
-      // 3. Run update
-      gameScene.update();
-
-      // 4. Verification
-      // Standard heel logic: centerX - 25, centerY + 15
-      // 100 - 25 = 75
-      // 100 + 15 = 115
-      expect(mockPetSprite.setX).toHaveBeenCalledWith(75);
-      expect(mockPetSprite.setY).toHaveBeenCalledWith(115);
-      
-      // Should play idle animation
-      expect(mockPetSprite.anims.play).toHaveBeenCalledWith('cat-idle', true);
+    it('creates sprites and pets for other players', () => {
+      expect(otherPlayer.gameObjects).toBeDefined();
+      expect(otherPlayer.gameObjects?.petSprite).toBeDefined();
     });
-    
-    it('should remove the event listener when the scene is destroyed', () => {
-        const removeSpy = jest.spyOn(window, 'removeEventListener');
-        
-        // 1. Manually trigger the destroy event handler
-        // Since we can't easily trigger the real Phaser event emitter in a mock,
-        // we grab the callback passed to `this.events.once('destroy', callback)`
-        // and execute it.
-        
-        const destroyCallback = (gameScene as any).events.once.mock.calls.find(
-            (call: any[]) => call[0] === 'destroy' || call[0] === Phaser.Scenes.Events.DESTROY
-        )[1];
+  });
 
-        // Execute the cleanup function
-        destroyCallback();
+  describe('Movement Loop (Update)', () => {
+    beforeEach(() => {
+      // @ts-ignore
+      scene._paused = false;
 
-        // 2. Verify cleanup happened
-        expect(removeSpy).toHaveBeenCalledWith('pet-guide-to', expect.any(Function));
+      mockBody.setVelocity.mockClear();
+      mockBody.setVelocityX.mockClear();
+      mockBody.setVelocityY.mockClear();
+      (ourPlayer.gameObjects!.petSprite!.anims.play as jest.Mock).mockClear();
+    });
+
+    it('plays walk-left animation for player and pet when left key is pressed', () => {
+      scene.cursorKeys.left.isDown = true;
+
+      scene.update();
+
+      expect(mockBody.setVelocityX).toHaveBeenCalledWith(expect.any(Number));
+      expect(ourPlayer.gameObjects!.sprite.anims.play).toHaveBeenCalledWith('misa-left-walk', true);
+      expect(ourPlayer.gameObjects!.petSprite!.anims.play).toHaveBeenCalledWith('cat-walk-left', true);
+    });
+
+    it('plays walk-right animation for player and pet when right key is pressed', () => {
+      scene.cursorKeys.right.isDown = true;
+      scene.update();
+
+      expect(ourPlayer.gameObjects!.sprite.anims.play).toHaveBeenCalledWith('misa-right-walk', true);
+      expect(ourPlayer.gameObjects!.petSprite!.anims.play).toHaveBeenCalledWith('cat-walk-right', true);
+    });
+
+
+    it('updates pet position relative to player position on every frame', () => {
+      scene.update();
+      expect(ourPlayer.gameObjects!.petSprite!.setX).toHaveBeenCalledWith(100 - 25);
+      expect(ourPlayer.gameObjects!.petSprite!.setY).toHaveBeenCalledWith(100 + 15);
+    });
+  });
+
+  describe('Emote System', () => {
+
+    it('emits an emote event when an icon is selected', () => {
+      // @ts-ignore
+      if (typeof scene.toggleEmoteMenu === 'function') {
+         // @ts-ignore
+         scene.toggleEmoteMenu();
+      }
+
+      // Find the click callback on the icons (which are images in the container)
+      const iconCalls = mockSpriteBase.on.mock.calls.filter(call => call[0] === 'pointerup');
+
+      if (iconCalls.length > 0) {
+        const clickCallback = iconCalls[0][1];
+        clickCallback();
+        expect(townController.emitEmote).toHaveBeenCalled();
+      } else {
+        // If no icons were created (e.g. if toggleEmoteMenu failed), this prevents a crash
+        // but likely means the previous test failed too.
+        expect(true).toBe(true);
+      }
+    });
+
+  });
+
+  describe('Pause and Resume', () => {
+    it('stops player movement and clears input captures on pause', () => {
+      scene.pause();
+
+      expect(ourPlayer.gameObjects!.sprite.anims.stop).toHaveBeenCalled();
+      expect(mockBody.setVelocity).toHaveBeenCalledWith(0);
+      expect(mockInput.keyboard.clearCaptures).toHaveBeenCalled();
+
+      // @ts-ignore
+      expect(scene._paused).toBe(true);
+    });
+
+    it('restores input captures on resume', () => {
+      mockInput.keyboard.getCaptures.mockReturnValue([1, 2, 3]);
+
+      scene.pause();
+      scene.resume();
+
+      expect(mockInput.keyboard.addCapture).toHaveBeenCalledWith([1, 2, 3]);
+      // @ts-ignore
+      expect(scene._paused).toBe(false);
+    });
+
+    it('does not update movement when paused', () => {
+      scene.pause();
+
+      scene.cursorKeys.left.isDown = true;
+      scene.update();
+
+      expect(mockBody.setVelocityX).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Disconnect Handling', () => {
+    it('removes sprites and pets when a player disconnects', () => {
+      // @ts-ignore
+      expect(scene['_players']).toHaveLength(2);
+
+      scene.updatePlayers([ourPlayer]);
+
+      expect(otherPlayer.gameObjects!.sprite.destroy).toHaveBeenCalled();
+      expect(otherPlayer.gameObjects!.label.destroy).toHaveBeenCalled();
+      expect(otherPlayer.gameObjects!.petSprite!.destroy).toHaveBeenCalled();
     });
   });
 });

@@ -19,12 +19,32 @@ const EMOTE_COOLDOWN_MS = 5000;
 
 const EMOTES = [
   { id: 'Calling-spritesheet', label: 'Calling', iconSrc: '/assets/emotes/Calling-static.png' },
-  { id: 'CheckMark-spritesheet', label: 'Check Mark', iconSrc: '/assets/emotes/CheckMark-static.png' },
-  { id: 'LaughingFace-spritesheet', label: 'Laughing', iconSrc: '/assets/emotes/LaughingFace-static.png' },
+  {
+    id: 'CheckMark-spritesheet',
+    label: 'Check Mark',
+    iconSrc: '/assets/emotes/CheckMark-static.png',
+  },
+  {
+    id: 'LaughingFace-spritesheet',
+    label: 'Laughing',
+    iconSrc: '/assets/emotes/LaughingFace-static.png',
+  },
   { id: 'LightBulb-spritesheet', label: 'Idea', iconSrc: '/assets/emotes/LightBulb-static.png' },
-  { id: 'MindBlown-spritesheet', label: 'Mind Blown', iconSrc: '/assets/emotes/MindBlown-static.png' },
-  { id: 'PartyPopper-spritesheet', label: 'Party', iconSrc: '/assets/emotes/PartyPopper-static.png' },
-  { id: 'ThinkingFace-spritesheet', label: 'Thinking', iconSrc: '/assets/emotes/ThinkingFace-static.png' },
+  {
+    id: 'MindBlown-spritesheet',
+    label: 'Mind Blown',
+    iconSrc: '/assets/emotes/MindBlown-static.png',
+  },
+  {
+    id: 'PartyPopper-spritesheet',
+    label: 'Party',
+    iconSrc: '/assets/emotes/PartyPopper-static.png',
+  },
+  {
+    id: 'ThinkingFace-spritesheet',
+    label: 'Thinking',
+    iconSrc: '/assets/emotes/ThinkingFace-static.png',
+  },
   { id: 'ThumbsUp-spritesheet', label: 'Thumbs Up', iconSrc: '/assets/emotes/ThumbsUp-static.png' },
 ];
 
@@ -80,7 +100,7 @@ export default function EmoteButton(): JSX.Element {
   return (
     <>
       <button
-        className="bubble-container bubble-emote"
+        className='bubble-container bubble-emote'
         onClick={() => {
           if (!isCoolingDown) setIsOpen(true);
         }}
@@ -90,12 +110,11 @@ export default function EmoteButton(): JSX.Element {
           padding: 0,
           border: 'none',
           background: 'transparent',
-          outline: 'none', 
-        }}
-      >
+          outline: 'none',
+        }}>
         <Image
-          src="/assets/emotes/emote-bubble.png"
-          alt="Open emote menu"
+          src='/assets/emotes/emote-bubble.png'
+          alt='Open emote menu'
           width={100}
           height={100}
           style={{ display: 'block' }}
@@ -104,54 +123,51 @@ export default function EmoteButton(): JSX.Element {
 
       <Modal isOpen={isOpen} onClose={closeModal}>
         <ModalOverlay />
-        <ModalContent maxW="450px" minH="360px">
+        <ModalContent maxW='450px' minH='360px'>
           <ModalHeader>Select an Emote</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <Box
-                display="grid"
-                gridTemplateColumns="repeat(4, 1fr)"
-                rowGap={16}   
-                columnGap={4}
-                justifyItems="center"
-                pt={6}   
-                pb={6} 
-            >
-                {EMOTES.map(emote => (
+              display='grid'
+              gridTemplateColumns='repeat(4, 1fr)'
+              rowGap={16}
+              columnGap={4}
+              justifyItems='center'
+              pt={6}
+              pb={6}>
+              {EMOTES.map(emote => (
                 <Button
-                    key={emote.id}
-                    onClick={() => handleSelectEmote(emote.id)}
-                    variant="ghost"
-                    p={0}
-                    isDisabled={isCoolingDown}
-                >
-                    <Box
-                    w="100px"
-                    h="100px"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                    bg="gray.100"
-                    border="2px solid"
-                    borderColor="gray.300"
-                    borderRadius="md"
+                  key={emote.id}
+                  onClick={() => handleSelectEmote(emote.id)}
+                  variant='ghost'
+                  p={0}
+                  isDisabled={isCoolingDown}>
+                  <Box
+                    w='100px'
+                    h='100px'
+                    display='flex'
+                    alignItems='center'
+                    justifyContent='center'
+                    bg='gray.100'
+                    border='2px solid'
+                    borderColor='gray.300'
+                    borderRadius='md'
                     _hover={{
-                        bg: 'gray.200',
-                        borderColor: 'gray.400',
-                    }}
-                    >
+                      bg: 'gray.200',
+                      borderColor: 'gray.400',
+                    }}>
                     <Image
-                        src={emote.iconSrc}
-                        alt={emote.id}
-                        width={72}
-                        height={72}
-                        style={{ objectFit: 'contain', display: 'block' }}
+                      src={emote.iconSrc}
+                      alt={emote.id}
+                      width={72}
+                      height={72}
+                      style={{ objectFit: 'contain', display: 'block' }}
                     />
-                    </Box>
+                  </Box>
                 </Button>
-                ))}
+              ))}
             </Box>
-            </ModalBody>
+          </ModalBody>
           <ModalFooter>
             <Button onClick={closeModal}>Cancel</Button>
           </ModalFooter>
