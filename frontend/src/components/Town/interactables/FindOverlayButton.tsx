@@ -15,7 +15,7 @@ import {
 } from '@chakra-ui/react';
 
 type Corner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
-const DESTINATIONS: Record<string, { x: number; y: number }> = {
+const destinations: Record<string, { x: number; y: number }> = {
   'Basement Dining Table 1': { x: 3005, y: 1111 },
   'TicTacToe 1': { x: 3337, y: 1257 },
   'TicTacToe 2': { x: 3553, y: 1056 },
@@ -58,9 +58,9 @@ export default function FindOverlayWithPanel({
     return () => window.removeEventListener('keydown', onKey);
   }, [open]);
 
-  //new code: send event to game scene
+  //send event to game scene
   const handleDestinationClick = (label: string) => {
-    const coords = DESTINATIONS[label];
+    const coords = destinations[label];
     if (coords) {
       const event = new CustomEvent('pet-guide-to', { detail: coords });
       window.dispatchEvent(event);
@@ -72,7 +72,7 @@ export default function FindOverlayWithPanel({
   return createPortal(
     <>
       {/* Fixed HUD button */}
-      <button className="bubble-container bubble-find" onClick={() => setOpen(true)}>
+      <button className='bubble-container bubble-find' onClick={() => setOpen(true)}>
         <Image
           src={findPng}
           alt='Find'
@@ -90,8 +90,8 @@ export default function FindOverlayWithPanel({
           <ModalHeader> Find Destination </ModalHeader>
           <Box maxH='300px' overflowY='auto'>
             <VStack align='stretch' spacing={2}>
-              {/*new code: loop through destinations to make buttons*/}
-              {Object.keys(DESTINATIONS).map(label => (
+              {/*loop through destinations to make buttons*/}
+              {Object.keys(destinations).map(label => (
                 <Button key={label} onClick={() => handleDestinationClick(label)}>
                   {label}
                 </Button>
