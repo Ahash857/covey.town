@@ -36,7 +36,7 @@ To create an account and configure your local environment:
 
 Once your backend is configured, you can start it by running `npm start` in the `townService` directory (the first time you run it, you will also need to run `npm install`).
 The backend will automatically restart if you change any of the files in the `townService/src` directory.
-
+Make sure to do `nvm use 18.0.0` to switch to node v18.0.0
 ### Configuring the frontend
 
 Create a `.env` file in the `frontend` directory, with the line: `NEXT_PUBLIC_TOWNS_SERVICE_URL=http://localhost:8081` (if you deploy the towns service to another location, put that location here instead)
@@ -48,3 +48,4 @@ automatically connect to the town with the friendly name "DEBUG_TOWN" (creating 
 
 In the `frontend` directory, run `npm start` (again, you'll need to run `npm install` the very first time). After several moments (or minutes, depending on the speed of your machine), a browser will open with the frontend running locally.
 The frontend will automatically re-compile and reload in your browser if you change any files in the `frontend/src` directory.
+Make sure to do `nvm use 18.0.0` to switch to node v18.0.0
